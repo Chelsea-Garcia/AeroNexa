@@ -180,3 +180,8 @@ Route::prefix('aeronexa')->group(function () {
     // simple login (no tokens)
     Route::post('users/login', [UserController::class, 'login']);
 });
+
+use App\Http\Controllers\PublicBookingController;
+
+// Ito ang tatawagin ng Frontend niyo: (POST) http://localhost:YOUR_PORT/api/hotel-booking
+Route::post('/hotel-booking', [PublicBookingController::class, 'bookHotel']);

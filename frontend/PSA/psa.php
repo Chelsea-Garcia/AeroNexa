@@ -1,3 +1,8 @@
+<?php
+require_once '../api_helper.php'; // I-include ang helper
+$flights = fetchData('http://localhost:8000/api/psa/flights');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,10 +22,10 @@
     </div>
     <ul class="nav-menu">
         <li><a href="homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
-        <li><a href="psa.html" class="nav-link active" onclick="setActive(this)">PHILLIPINE SKY AIRWAY</a></li>
-        <li><a href="aureliya.html" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
-        <li><a href="trutravel.html" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
-        <li><a href="skyroute.html" class="nav-link" onclick="setActive(this)">SKYROUTE</a></li>
+        <li><a href="psa.php" class="nav-link active" onclick="setActive(this)">PHILLIPINE SKY AIRWAY</a></li>
+        <li><a href="aureliya.php" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
+        <li><a href="trutravel.php" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
+        <li><a href="skyroute.php" class="nav-link" onclick="setActive(this)">SKYROUTE</a></li>
     </ul>
     <div class="nav-profile">
         <a href="account.html">
@@ -29,7 +34,6 @@
     </div>
 </nav>
 
-<!-- MAIN CONTENT: Filter row + booking layout -->
 <div class="page-wrap">
 
     <div class="filter-bar" role="region" aria-label="flight search filters">
@@ -110,53 +114,41 @@
 
         <div class="left-panel">
             <h2 class="panel-title">FLIGHTS</h2>
+            <div id="flight-list">
+                <?php if (!empty($flights)): ?>
+                    <?php foreach ($flights as $flight): ?>
+                        <?php 
+                            // Format Data
+                            $route = htmlspecialchars($flight['origin']) . ' to ' . htmlspecialchars($flight['destination']);
+                            $depTime = date('h:i A', strtotime($flight['departure_time']));
+                            $arrTime = date('h:i A', strtotime($flight['arrival_time']));
+                            $timeString = "$depTime - $arrTime";
+                            $flightNum = htmlspecialchars($flight['flight_number']);
+                            $price = number_format($flight['price'], 0);
+                        ?>
+                        
+                        <div class="flight-card" 
+                             onclick="selectFlight(this, '<?= $flightNum ?>')" 
+                             data-price="<?= $price ?>" 
+                             data-route="<?= $route ?>">
+                             
+                            <div class="flight-info">
+                                <h3 class="flight-number">Flight <?= $flightNum ?></h3>
+                                <p class="flight-route"><?= $route ?></p>
+                                <p class="flight-time"><?= $timeString ?></p>
+                            </div>
+                            <div class="flight-price">
+                                ₱<?= $price ?>
+                            </div>
+                        </div>
 
-            <div class="flight-card" data-route="Manila → Cebu">
-                <div class="flight-info">
-                    <h3>Manila → Cebu</h3>
-                    <p class="time">08:00 — 09:30</p>
-                    <p class="meta">Economy • 1h 30m</p>
-                </div>
-                <div class="flight-actions">
-                    <div class="fare">₱1,450</div>
-                    <button class="book-btn">Book</button>
-                </div>
-            </div>
-
-            <div class="flight-card" data-route="Manila → Davao">
-                <div class="flight-info">
-                    <h3>Manila → Davao</h3>
-                    <p class="time">10:00 — 12:00</p>
-                    <p class="meta">Economy • 2h 00m</p>
-                </div>
-                <div class="flight-actions">
-                    <div class="fare">₱2,100</div>
-                    <button class="book-btn">Book</button>
-                </div>
-            </div>
-
-            <div class="flight-card" data-route="Clark → Iloilo">
-                <div class="flight-info">
-                    <h3>Clark → Iloilo</h3>
-                    <p class="time">14:00 — 15:20</p>
-                    <p class="meta">Economy • 1h 20m</p>
-                </div>
-                <div class="flight-actions">
-                    <div class="fare">₱1,200</div>
-                    <button class="book-btn">Book</button>
-                </div>
-            </div>
-
-            <div class="flight-card" data-route="Cebu → Manila">
-                <div class="flight-info">
-                    <h3>Cebu → Manila</h3>
-                    <p class="time">16:30 — 18:00</p>
-                    <p class="meta">Economy • 1h 30m</p>
-                </div>
-                <div class="flight-actions">
-                    <div class="fare">₱1,450</div>
-                    <button class="book-btn">Book</button>
-                </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="padding: 20px; text-align: center; color: #666;">
+                        <h3>No flights available</h3>
+                        <p>Check if Server is running (Port 8000) and Database has seeds.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -194,6 +186,46 @@
         element.classList.add('active');
     }
 
+    // --- Main Logic: Select Flight ---
+    function selectFlight(card, flightNum) {
+        const rightPanel = document.getElementById('right-panel');
+        const bookingContainer = document.getElementById('booking-container'); 
+        
+        // 1. Show the Right Panel
+        if (rightPanel && bookingContainer) {
+            rightPanel.classList.remove('hidden');
+            bookingContainer.classList.add('three-column'); 
+        }
+
+        // 2. Get Data from the Clicked Card
+        const route = card.getAttribute('data-route'); 
+        const price = card.getAttribute('data-price');
+        
+        // Get time from inside the card
+        let time = 'N/A';
+        const timeElement = card.querySelector('.flight-time');
+        if (timeElement) {
+            time = timeElement.innerText;
+        }
+        
+        // 3. Update the Details Panel Content
+        document.getElementById('details-content').innerHTML = `
+            <h2>${route}</h2>
+            <p><strong>Flight No:</strong> Flight ${flightNum}</p>
+            <p><strong>Time:</strong> ${time}</p>
+            <p><strong>Price:</strong> ₱${price}</p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                <p><strong>Aircraft:</strong> Airbus A320</p>
+                <p style="font-size: 0.9em; color: #555; margin-top:5px;">Includes 7kg Hand Carry luggage + 20kg Check-in.</p>
+            </div>
+            
+            <button class="book-btn" style="margin-top: 20px;" onclick="alert('Booking for Flight ${flightNum}...')">Proceed to Book</button>
+        `;
+
+        switchTab('details');
+    }
+
     function closeDetailsPanel() {
         const rightPanel = document.getElementById('right-panel');
         const bookingContainer = document.getElementById('booking-container'); 
@@ -219,76 +251,52 @@
         }
     }
 
-    // --- Core Logic ---
-
+    // --- Search Logic ---
     document.addEventListener('DOMContentLoaded', () => {
-        const path = location.pathname.split('/').pop() || 'psa.html';
+        // Handle Active Link
+        const path = location.pathname.split('/').pop() || 'psa.php';
         document.querySelectorAll('.nav-link').forEach(link => {
             if (link.getAttribute('href') === path) link.classList.add('active');
-            else link.classList.remove('active');
         });
 
-        document.getElementById('close-details-panel').addEventListener('click', closeDetailsPanel);
-    });
+        // Close Button
+        const closeBtn = document.getElementById('close-details-panel');
+        if(closeBtn) {
+            closeBtn.addEventListener('click', closeDetailsPanel);
+        }
 
-    document.querySelectorAll('.flight-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const rightPanel = document.getElementById('right-panel');
-            const bookingContainer = document.getElementById('booking-container'); 
-            
-            if (rightPanel && bookingContainer) {
-                rightPanel.classList.remove('hidden');
-                bookingContainer.classList.add('three-column'); 
-            }
-            
-            const route = card.getAttribute('data-route') || card.querySelector('h3').innerText;
-            const time = card.querySelector('.time').innerText;
-            const fare = card.querySelector('.fare').innerText;
-            const meta = card.querySelector('.meta').innerText;
+        // Search Button Logic
+        const searchBtn = document.getElementById('search-btn');
+        if(searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                const from = document.getElementById('from').value.trim();
+                const to = document.getElementById('to').value.trim();
+                const rightPanel = document.getElementById('right-panel');
+                
+                const cards = Array.from(document.querySelectorAll('.flight-card'));
+                let anyVisible = false;
 
-            document.getElementById('details-content').innerHTML = `
-                <h2>${route}</h2>
-                <p><strong>Time:</strong> ${time}</p>
-                <p><strong>Info:</strong> ${meta}</p>
-                <p><strong>Lowest fare:</strong> ${fare}</p>
-                <button class="book-btn" style="margin-top:12px;">Proceed to Book</button>
-            `;
+                cards.forEach(card => {
+                    const route = card.getAttribute('data-route') || card.innerText;
+                    const matchesFrom = !from || route.includes(from);
+                    const matchesTo = !to || route.includes(to);
+                    
+                    if (matchesFrom && matchesTo) {
+                        card.style.display = 'flex';
+                        anyVisible = true;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
 
-            switchTab('details');
-        });
-    });
-
-    document.getElementById('search-btn').addEventListener('click', () => {
-        const from = document.getElementById('from').value.trim();
-        const to = document.getElementById('to').value.trim();
-        const rightPanel = document.getElementById('right-panel');
-        const bookingContainer = document.getElementById('booking-container');
-        
-        const cards = Array.from(document.querySelectorAll('.flight-card'));
-        let anyVisible = false;
-
-        cards.forEach(card => {
-            const route = card.getAttribute('data-route') || card.innerText;
-            const matchesFrom = !from || route.includes(from);
-            const matchesTo = !to || route.includes(to);
-            if (matchesFrom && matchesTo) {
-                card.style.display = 'flex';
-                anyVisible = true;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        if (rightPanel && bookingContainer) {
-            if (!anyVisible) {
-                closeDetailsPanel();
-                document.getElementById('details-content').innerHTML = `<h3 class="muted">No flights found for your search</h3>`;
-            } else {
-                closeDetailsPanel(); 
-                document.getElementById('details-content').innerHTML = `<h3 class="muted">Showing search results. Select a flight for details.</h3>`;
-            }
-            switchTab('details');
-            rightPanel.classList.remove('hidden');
+                if (rightPanel) {
+                    closeDetailsPanel(); 
+                    if (!anyVisible) {
+                        // Optional: Show "No results" message elsewhere
+                        alert("No flights found matching your criteria.");
+                    }
+                }
+            });
         }
     });
 </script>
