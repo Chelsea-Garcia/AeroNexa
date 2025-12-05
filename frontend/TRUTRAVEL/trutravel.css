@@ -240,7 +240,7 @@ body {
     height: 150px;
     object-fit: cover;
 }
-.package-card p {
+.-card p {
     padding: 10px;
     font-weight: 600;
 }

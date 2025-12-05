@@ -17,7 +17,7 @@
         </div>
         <ul class="nav-menu">
             <li><a href="/frontend/homepage.html" class="nav-link">HOME</a></li>
-            <li><a href="/frontend/PSA/psa.html" class="nav-link">PHILLIPINE SKY AIRWAY</a></li>
+            <li><a href="/frontend/PSA/psa.html" class="nav-link">PHILIPPINE SKY AIRWAY</a></li>
             <li><a href="aureliya.html" class="nav-link active">AURELI-YA!</a></li>
             <li><a href="/frontend/TRUTRAVEL/trutravel.html" class="nav-link">TRUTRAVEL</a></li>
             <li><a href="/frontend/SKYROUTE/skyroute.html" class="nav-link">SKYROUTE</a></li>
@@ -71,32 +71,32 @@
     </div>
 </div>
 
-    <div class="spacer-30"></div>
+<div class="spacer-30"></div>
 
     <div class="content-wrapper" id="contentWrapper">
         <div class="airbnb-grid" id="airbnbGrid">
             <div class="airbnb-card" data-index="0">
-                <img src="airbnb1.jpg" />
+                <img src="assets/airbnb1.jpg" />
                 <p>Cozy Beachfront Home</p>
             </div>
             <div class="airbnb-card" data-index="1">
-                <img src="airbnb2.jpg" />
+                <img src="assets/airbnb2.jpg" />
                 <p>Mountain View Cabin</p>
             </div>
             <div class="airbnb-card" data-index="2">
-                <img src="airbnb3.jpg" />
+                <img src="assets/airbnb3.jpg" />
                 <p>Luxury City Condo</p>
             </div>
             <div class="airbnb-card" data-index="3">
-                <img src="airbnb4.jpg" />
+                <img src="assets/airbnb4.jpg" />
                 <p>Private Island Retreat</p>
             </div>
             <div class="airbnb-card" data-index="4">
-                <img src="airbnb5.jpg" />
+                <img src="assets/airbnb5.jpg" />
                 <p>Modern Glass Villa</p>
             </div>
             <div class="airbnb-card" data-index="5">
-                <img src="airbnb6.jpg" />
+                <img src="assets/airbnb6.jpg" />
                 <p>Forest Treehouse</p>
             </div>
         </div>
@@ -116,27 +116,90 @@
 
 <script>
     const details = [
-        { title: "Cozy Beachfront Home", desc: "A relaxing beachfront stay.", imgSrc: "airbnb1.jpg" },
-        { title: "Mountain View Cabin", desc: "A peaceful cabin with cold breeze.", imgSrc: "airbnb2.jpg" },
-        { title: "Luxury City Condo", desc: "In the heart of the city.", imgSrc: "airbnb3.jpg" },
-        { title: "Private Island Retreat", desc: "Exclusive island experience.", imgSrc: "airbnb4.jpg" },
-        { title: "Modern Glass Villa", desc: "Panoramic glass walls + pool.", imgSrc: "airbnb5.jpg" },
-        { title: "Forest Treehouse", desc: "Stay above the forest canopy.", imgSrc: "airbnb6.jpg" }
+        { 
+            type: "BEACH HOUSE",
+            title: "Cozy Beachfront Home", 
+            location: "Batangas",
+            address: "123 Sandy Shore Dr, Nasugbu",
+            price: "₱4,500 / night",
+            desc: "A relaxing beachfront stay with direct access to the ocean.", 
+            imgSrc: "assets/airbnb1.jpg" 
+        },
+        { 
+            type: "CABIN",
+            title: "Mountain View Cabin", 
+            location: "Tagaytay",
+            address: "45 Pine Ridge Rd, Tagaytay City",
+            price: "₱3,200 / night",
+            desc: "A peaceful cabin with cold breeze, perfect for a weekend getaway.", 
+            imgSrc: "assets/airbnb2.jpg" 
+        },
+        { 
+            type: "CONDO",
+            title: "Luxury City Condo", 
+            location: "Makati",
+            address: "Unit 204, Skyline Tower, Salcedo",
+            price: "₱5,000 / night",
+            desc: "In the heart of the city. Walking distance to malls.", 
+            imgSrc: "assets/airbnb3.jpg" 
+        },
+        { 
+            type: "RESORT",
+            title: "Private Island Retreat", 
+            location: "Palawan",
+            address: "Island No. 4, El Nido",
+            price: "₱15,000 / night",
+            desc: "Exclusive island experience with private boat transfer.", 
+            imgSrc: "assets/airbnb4.jpg" 
+        },
+        { 
+            type: "VILLA",
+            title: "Modern Glass Villa", 
+            location: "Antipolo",
+            address: "99 Cloud View, Antipolo Rizal",
+            price: "₱8,500 / night",
+            desc: "Panoramic glass walls + pool overlooking the city lights.", 
+            imgSrc: "assets/airbnb5.jpg" 
+        },
+        { 
+            type: "TREEHOUSE",
+            title: "Forest Treehouse", 
+            location: "Baguio",
+            address: "Camp John Hay Area",
+            price: "₱2,800 / night",
+            desc: "Stay above the forest canopy. A unique rustic experience.", 
+            imgSrc: "assets/airbnb6.jpg" 
+        }
     ];
 
     function showDetails(index) {
         const panel = document.getElementById("detailsPanel");
-        const selected = details[index];
+        const selected = details[index]; 
 
+        // I updated the HTML structure slightly to match your CSS classes perfectly
         panel.innerHTML = `
             <img src="${selected.imgSrc}" alt="${selected.title}" class="detail-image" />
+            
             <div class="detail-content">
-                <h2>${selected.title}</h2>
-                <p>${selected.desc}</p>
-                <button class="book-btn">Book Now</button>
+                <span class="place-type">${selected.type}</span>
+
+                <div class="title-price-row">
+                    <h2>${selected.title}</h2>
+                    <span class="price-tag">${selected.price}</span>
+                </div>
+
+                <div class="location-info">
+                    <p class="loc-main"><strong>Location:</strong> ${selected.location}</p>
+                    <p class="loc-address">${selected.address}</p>
+                </div>
+
+                <p class="description-text">${selected.desc}</p>
+                
+                <button class="book-btn" onclick="window.location.href='/payment'">Proceed to Payment</button>
             </div>
         `;
     }
+
     document.addEventListener('DOMContentLoaded', () => {
         const cards = document.querySelectorAll('.airbnb-card');
         cards.forEach(card => {
