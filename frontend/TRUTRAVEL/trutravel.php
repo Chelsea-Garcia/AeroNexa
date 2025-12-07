@@ -1,9 +1,17 @@
+<?php
+// Kuhanin ang helper
+require_once '../api_helper.php'; 
+
+// Fetch Packages from TruTravel API (Port 8004)
+$packages = fetchData('http://localhost:8004/api/trutravel/packages');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="aureliya.css" />
+    <link rel="stylesheet" href="trutravel.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <title>AERONEXA – AURELI-YA!</title>
 </head>
@@ -16,11 +24,11 @@
             <span class="nav-title">AERONEXA</span>
         </div>
         <ul class="nav-menu">
-            <li><a href="homepage.html" class="nav-link">HOME</a></li>
-            <li><a href="psa.html" class="nav-link">PHILLIPINE SKY AIRWAY</a></li>
-            <li><a href="aureliya.html" class="nav-link active">AURELI-YA!</a></li>
-            <li><a href="trutravel.html" class="nav-link">TRUTRAVEL</a></li>
-            <li><a href="skyroute.html" class="nav-link">SKYROUTE</a></li>
+            <li><a href="/AeroNexa/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
+            <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link" onclick="setActive(this)">PHILIPPINE SKY AIRWAY</a></li>
+            <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
+            <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
+            <li><a href="/AeroNexa/frontend/SKYROUTE/skyroute.php" class="nav-link" onclick="setActive(this)">SKYROUTE</a></li>
         </ul>
         <div class="nav-profile">
             <a href="account.html">
@@ -74,7 +82,7 @@
     <div class="spacer-30"></div>
 
     <div class="content-wrapper" id="contentWrapper">
-        <div class="airbnb-grid" id="property-list">
+        <div class="airbnb-grid" id="airbnbGrid">
             <div class="airbnb-card" data-index="0">
                 <img src="airbnb1.jpg" />
                 <p>Cozy Beachfront Home</p>
@@ -114,9 +122,7 @@
     </div>
 </footer>
 
-<script src="C:\xampp\htdocs\AeroNexa\backendjs\aureliya.js"></script>
 <script>
-
     const details = [
         { title: "Cozy Beachfront Home", desc: "A relaxing beachfront stay.", imgSrc: "airbnb1.jpg" },
         { title: "Mountain View Cabin", desc: "A peaceful cabin with cold breeze.", imgSrc: "airbnb2.jpg" },
@@ -139,6 +145,8 @@
             </div>
         `;
     }
+
+    // ⭐ ADDED JS to add event listeners to cards ⭐
     document.addEventListener('DOMContentLoaded', () => {
         const cards = document.querySelectorAll('.airbnb-card');
         cards.forEach(card => {

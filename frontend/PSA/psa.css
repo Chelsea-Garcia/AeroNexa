@@ -390,3 +390,142 @@ body {
         margin-left:0; 
     }
 }
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Dimmed background */
+    z-index: 2000; /* Above navbar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: #ffffff;
+    width: 500px;
+    max-width: 90%;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #888;
+}
+.close-modal:hover { color: #000; }
+
+.modal-header h2 { margin: 0 0 5px 0; color: #04498D; }
+.modal-header p { margin: 0; color: #666; font-size: 14px; }
+
+.modal-body {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    padding: 20px 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* In-depth Ticket Design inside Modal */
+.ticket-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+.ticket-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.ticket-value { font-size: 16px; font-weight: 600; color: #333; }
+.flight-path { display: flex; align-items: center; gap: 10px; color: #037FBE; font-weight: bold; font-size: 18px; margin-bottom: 15px; }
+
+.passenger-form { margin-top: 20px; }
+.passenger-form h4 { margin: 0 0 10px 0; font-size: 14px; color: #444; }
+.form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.modal-input {
+    padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 50%; outline: none;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+}
+.total-price { font-size: 24px; font-weight: bold; color: #0fd239; }
+.confirm-btn {
+    background: #04498D; color: #fff; border: none; padding: 12px 24px;
+    border-radius: 30px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.confirm-btn:hover { background: #037FBE; }
+
+/* --- SUCCESS MODAL STYLES --- */
+.success-content {
+    text-align: center;
+    max-width: 400px; /* Slightly smaller than the booking details */
+}
+
+.success-icon {
+    width: 70px;
+    height: 70px;
+    background: #0fd239;
+    color: white;
+    border-radius: 50%;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+    box-shadow: 0 4px 15px rgba(15, 210, 57, 0.3);
+}
+
+.confirmation-box {
+    background: #f6f8fb;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border: 1px dashed #cfd9e0;
+}
+
+.ref-label {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.confirmation-box h3 {
+    margin: 5px 0 0 0;
+    font-size: 28px;
+    color: #04498D;
+    letter-spacing: 2px;
+}
+
+.email-note {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 25px;
+}

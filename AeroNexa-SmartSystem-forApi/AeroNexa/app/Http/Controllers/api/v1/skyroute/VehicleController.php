@@ -8,6 +8,13 @@ use App\Models\skyroute\Location;
 
 class VehicleController extends Controller
 {
+
+    public function index()
+    {
+        // Tanggalin ang '\App\Models\...' at gamitin lang ang 'Vehicle'
+        return response()->json(Vehicle::all());
+    }
+
     // GET /skyroute/vehicles/city/{city}
     public function vehiclesByCity($city)
     {

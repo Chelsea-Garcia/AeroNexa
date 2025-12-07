@@ -119,8 +119,6 @@ Route::prefix('skyroute')->group(function () {
     Route::get('/locations/{id}', [LocationController::class, 'show']);
 
     // Vehicles by city
-    // Get ALL vehicles (Add this line)
-    Route::get('/vehicles', [VehicleController::class, 'index']);
     Route::get('/vehicles/city/{city}', [VehicleController::class, 'vehiclesByCity']);
 
     // Bookings
