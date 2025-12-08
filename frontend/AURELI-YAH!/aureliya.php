@@ -37,18 +37,18 @@ $properties = getAureliyaProperties();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="aureliya.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>AERONEXA – AURELI-YA!</title>
+    <title>AERONEXA AURELI-YA!</title>
 </head>
 
 <body>
 
     <nav class="navbar">
         <div class="nav-logo">
-            <img src="aero.logo.png" alt="Logo" class="nav-logo-img" />
+            <img src="/AERONEXA/frontend/ASSETS/aero.logo.png" alt="Logo" class="nav-logo-img" />
             <span class="nav-title">AERONEXA</span>
         </div>
         <ul class="nav-menu">
-            <li><a href="/AeroNexa/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
+            <li><a href="/AeroNexa/frontend/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
             <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link" onclick="setActive(this)">PHILIPPINE SKY AIRWAY</a></li>
             <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
             <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
@@ -56,7 +56,7 @@ $properties = getAureliyaProperties();
         </ul>
         <div class="nav-profile">
             <a href="account.html">
-                <img src="profile.png" alt="User Profile" class="profile-icon">
+                <img src="/AERONEXA/frontend/ASSETS/profile.png" alt="User Profile" class="profile-icon">
             </a>
         </div>
     </nav>

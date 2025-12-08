@@ -20,11 +20,11 @@ $packages = fetchData('http://localhost:8004/api/trutravel/packages');
 
     <nav class="navbar">
         <div class="nav-logo">
-            <img src="aero.logo.png" alt="Logo" class="nav-logo-img" />
+            <img src="/AERONEXA/frontend/ASSETS/aero.logo.png" alt="Logo" class="nav-logo-img" />
             <span class="nav-title">AERONEXA</span>
         </div>
         <ul class="nav-menu">
-            <li><a href="/AeroNexa/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
+            <li><a href="/AeroNexa/frontend/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
             <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link" onclick="setActive(this)">PHILIPPINE SKY AIRWAY</a></li>
             <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
             <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
@@ -32,7 +32,7 @@ $packages = fetchData('http://localhost:8004/api/trutravel/packages');
         </ul>
         <div class="nav-profile">
             <a href="account.html">
-                <img src="profile.png" alt="User Profile" class="profile-icon">
+                <img src="/AERONEXA/frontend/ASSETS/profile.png" alt="User Profile" class="profile-icon">
             </a>
         </div>
     </nav>

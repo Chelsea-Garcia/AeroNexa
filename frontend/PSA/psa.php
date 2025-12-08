@@ -100,18 +100,18 @@ $flights = getPSAFlights();
 
 <nav class="navbar">
     <div class="nav-logo">
-        <img src="/frontend/ASSETS/aero.logo.png" alt="Logo" class="nav-logo-img" />
+        <img src="/AERONEXA/frontend/ASSETS/aero.logo.png" alt="Logo" class="nav-logo-img" />
         <span class="nav-title">AERONEXA</span>
     </div>
     <ul class="nav-menu">
-        <li><a href="/AeroNexa/homepage.html" class="nav-link">HOME</a></li>
+        <li><a href="/AeroNexa/frontend/homepage.html" class="nav-link">HOME</a></li>
         <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link active">PHILIPPINE SKY AIRWAY</a></li>
         <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link">AURELI-YA!</a></li>
         <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link">TRUTRAVEL</a></li>
         <li><a href="/AeroNexa/frontend/SKYROUTE/skyroute.php" class="nav-link">SKYROUTE</a></li>
     </ul>
     <div class="nav-profile">
-        <a href="/frontend/account.html"><img src="/frontend/ASSETS/profile.png" class="profile-icon"></a>
+        <a href="/frontend/account.html"><img src="/AERONEXA/frontend/ASSETS/profile.png" class="profile-icon"></a>
     </div>
 </nav>
 
