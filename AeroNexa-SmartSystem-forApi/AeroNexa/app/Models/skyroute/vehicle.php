@@ -1,24 +1,14 @@
 <?php
-
 namespace App\Models\skyroute;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Vehicle extends Model
 {
-    protected $connection = 'skyroute';
+    use HasFactory;
+    // CHANGE THIS LINE:
+    protected $connection = 'mongodb_skyroute';
     protected $collection = 'vehicles';
-
-    protected $fillable = [
-        'location_id',
-        'type',          // SUV / Car / Bus
-        'name',
-        'plate_number',
-        'fare_per_km',   // NEW
-    ];
-
-    public function location()
-    {
-        return $this->belongsTo(Location::class);
-    }
+    protected $fillable = ['location_id', 'name', 'type', 'plate_number', 'capacity'];
 }

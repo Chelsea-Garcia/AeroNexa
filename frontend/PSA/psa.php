@@ -1,7 +1,6 @@
 <?php
 // --- DIRECT FETCH FUNCTION ---
 function getPSAFlights() {
-    // Try 127.0.0.1 first (Port 8000)
     $url = 'http://127.0.0.1:8000/api/psa/flights';
     
     $ch = curl_init();
@@ -12,7 +11,6 @@ function getPSAFlights() {
     $err = curl_error($ch);
     curl_close($ch);
 
-    // Backup: Try localhost
     if ($err || empty($output)) {
         $url = 'http://localhost:8000/api/psa/flights';
         $ch = curl_init();
@@ -38,77 +36,62 @@ $flights = getPSAFlights();
     <title>AERONEXA - Book Flight</title>
 
     <style>
-        /* CSS PARA PUMAGITNA ANG MODAL */
+        /* --- FIX: CENTERED MODAL & Z-INDEX --- */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            display: flex;           /* Flexbox para sa centering */
-            justify-content: center; /* Gitna Horizontal */
-            align-items: center;     /* Gitna Vertical */
-            opacity: 1;
-            transition: opacity 0.3s ease;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999; /* Higher than navbar */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
         }
 
         .hidden { display: none !important; }
 
         .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 95%;
-            max-width: 550px; 
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-height: 90vh; 
-            overflow-y: auto;
+            background: white; padding: 30px; border-radius: 12px;
+            width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;
+            position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            pointer-events: auto;
         }
 
         .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #888;
+            position: absolute; top: 15px; right: 20px; font-size: 28px;
+            cursor: pointer; color: #888; z-index: 10001;
         }
         .close-modal:hover { color: #d4070f; }
 
-        /* Form Inputs Styling */
+        /* INPUT FIXES */
         .passenger-form input, .passenger-form select {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 13px;
-            width: 100%; 
-            box-sizing: border-box;
+            border: 1px solid #ccc; border-radius: 4px; padding: 12px;
+            font-family: 'Poppins', sans-serif; font-size: 13px; width: 100%;
+            box-sizing: border-box; background: #fff; color: #333;
         }
-        .passenger-form input:focus, .passenger-form select:focus {
-            border-color: #037FBE;
-            outline: none;
-            background: #fdfdfd;
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .section-header {
+            margin: 20px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;
+            color: #037FBE; font-size: 13px; font-weight: 700; text-transform: uppercase;
         }
         
-        .form-row {
+        /* RESTORED LAYOUT HELPERS */
+        .booking-container {
             display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 20px;
+            position: relative;
         }
-
-        .section-header {
-            margin: 20px 0 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-            color: #037FBE;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .booking-container.three-column .left-panel {
+            /* Adjust width when right panel is open */
+            flex: 2; 
+        }
+        .right-panel {
+            width: 350px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+            height: fit-content;
         }
     </style>
 </head>
@@ -121,49 +104,27 @@ $flights = getPSAFlights();
         <span class="nav-title">AERONEXA</span>
     </div>
     <ul class="nav-menu">
-        <li><a href="/AeroNexa/homepage.html" class="nav-link" onclick="setActive(this)">HOME</a></li>
-        <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link active" onclick="setActive(this)">PHILIPPINE SKY AIRWAY</a></li>
-        <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link" onclick="setActive(this)">AURELI-YA!</a></li>
-        <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link" onclick="setActive(this)">TRUTRAVEL</a></li>
-        <li><a href="/AeroNexa/frontend/SKYROUTE/skyroute.php" class="nav-link" onclick="setActive(this)">SKYROUTE</a></li>
+        <li><a href="/AeroNexa/homepage.html" class="nav-link">HOME</a></li>
+        <li><a href="/AeroNexa/frontend/PSA/psa.php" class="nav-link active">PHILIPPINE SKY AIRWAY</a></li>
+        <li><a href="/AeroNexa/frontend/AURELI-YAH!/aureliya.php" class="nav-link">AURELI-YA!</a></li>
+        <li><a href="/AeroNexa/frontend/TRUTRAVEL/trutravel.php" class="nav-link">TRUTRAVEL</a></li>
+        <li><a href="/AeroNexa/frontend/SKYROUTE/skyroute.php" class="nav-link">SKYROUTE</a></li>
     </ul>
     <div class="nav-profile">
-        <a href="/frontend/account.html">
-            <img src="/frontend/ASSETS/profile.png" alt="User Profile" class="profile-icon">
-        </a>
+        <a href="/frontend/account.html"><img src="/frontend/ASSETS/profile.png" class="profile-icon"></a>
     </div>
 </nav>
 
 <div class="page-wrap">
-    <div class="filter-bar" role="region" aria-label="flight search filters">
-        <div class="filter-item">
-            <label>Type</label>
-            <div class="select-wrapper">
-                <select id="trip-type"><option value="oneway">One way</option><option value="round">Round trip</option></select>
-            </div>
-        </div>
-        <div class="filter-item">
-            <label>From</label>
-            <div class="select-wrapper">
-                <select id="from"><option value="">Any</option><option>Manila</option><option>Cebu</option><option>Davao</option></select>
-            </div>
-        </div>
-        <div class="filter-item">
-            <label>To</label>
-            <div class="select-wrapper">
-                <select id="to"><option value="">Any</option><option>Manila</option><option>Cebu</option><option>Davao</option></select>
-            </div>
-        </div>
-        <div class="filter-item">
-            <label>Date</label>
-            <input id="departure" type="date" />
-        </div>
-        <div class="filter-action">
-            <button id="search-btn" class="search-btn">Search</button>
-        </div>
+    <div class="filter-bar">
+        <div class="filter-item"><label>From</label><select id="from"><option>Manila</option><option>Cebu</option></select></div>
+        <div class="filter-item"><label>To</label><select id="to"><option>Cebu</option><option>Davao</option></select></div>
+        <div class="filter-item"><label>Date</label><input id="departure" type="date" /></div>
+        <div class="filter-action"><button id="search-btn" class="search-btn">Search</button></div>
     </div>
 
     <div class="booking-container" id="booking-container">
+        
         <div class="packages-panel">
             <h2 class="panel-title">TRAVEL PACKAGES</h2>
             <div class="package-card">
@@ -180,7 +141,6 @@ $flights = getPSAFlights();
 
         <div class="left-panel">
             <h2 class="panel-title">AVAILABLE FLIGHTS</h2>
-
             <?php if (!empty($flights)): ?>
                 <?php foreach ($flights as $flight): ?>
                     <?php 
@@ -191,12 +151,10 @@ $flights = getPSAFlights();
                         $arrTime = substr($flight['arrival_time'] ?? '00:00', 0, 5);
                         $price = number_format($flight['price'] ?? 0, 0, '.', '');
                         $flightCode = htmlspecialchars($flight['flight_number'] ?? $flight['code'] ?? 'FL-XXX');
-
                         $routeStr = "$origin → $destination";
                         $timeStr = "$depTime — $arrTime";
                     ?>
-
-                    <div class="flight-card" data-route="<?= $routeStr ?>">
+                    <div class="flight-card" onclick="showRightPanel('<?= $flightId ?>', '<?= $routeStr ?>', '<?= $depTime ?>', '<?= $arrTime ?>', '<?= $price ?>', '<?= $flightCode ?>')">
                         <div class="flight-info">
                             <h3><?= $routeStr ?></h3>
                             <p class="time"><?= $timeStr ?></p>
@@ -204,22 +162,18 @@ $flights = getPSAFlights();
                         </div>
                         <div class="flight-actions">
                             <div class="fare">₱<?= number_format($price) ?></div>
-                            <button class="book-btn" onclick="showFlightDetails('<?= $flightId ?>', '<?= $routeStr ?>', '<?= $depTime ?>', '<?= $arrTime ?>', '<?= $price ?>', '<?= $flightCode ?>')">Book</button>
+                            <button class="book-btn">Select</button>
                         </div>
                     </div>
-
                 <?php endforeach; ?>
             <?php else: ?>
-                <div style="padding: 20px; text-align: center;">
-                    <h3>No flights available.</h3>
-                    <p>Check PSA Server (Port 8000).</p>
-                </div>
+                <div style="padding: 20px; text-align: center;"><h3>No flights available.</h3><p>Check PSA Server (Port 8000).</p></div>
             <?php endif; ?>
         </div>
 
         <div class="right-panel hidden" id="right-panel">
-            <button class="close-btn" id="close-details-panel">&times;</button>
-            <div id="details-content" class="tab-content">
+            <button class="close-btn" id="close-details-panel" onclick="closeRightPanel()" style="position:relative; top:0; right:0; float:right;">&times;</button>
+            <div id="details-content" class="tab-content" style="margin-top:20px;">
                 <h3 class="muted">Select a flight</h3>
             </div>
         </div>
@@ -229,107 +183,59 @@ $flights = getPSAFlights();
 <div id="booking-modal" class="modal-overlay hidden">
     <div class="modal-content">
         <span class="close-modal" onclick="closeBookingModal()">&times;</span>
+        <h2 style="margin:0; color:#037FBE;">Flight Itinerary</h2>
+        <p style="margin:5px 0 15px; color:#666; font-size:14px;">Complete your travel details.</p>
         
-        <div class="modal-header">
-            <h2 style="margin:0; color:#037FBE;">Flight Itinerary</h2>
-            <p style="margin:5px 0 15px; color:#666; font-size:14px;">Complete your travel details.</p>
-        </div>
+        <input type="hidden" id="selected-flight-id" value="">
+        <div id="modal-flight-summary" style="background:#f4f9fd; padding:10px; border-radius:5px; margin-bottom:15px; font-weight:bold; color:#555;"></div>
 
-        <div class="modal-body">
-            <div id="modal-flight-details" style="background:#f4f9fd; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #e1eef7;"></div>
-            
-            <input type="hidden" id="selected-flight-id" value="">
-
-            <div class="passenger-form">
-                <div class="section-header">Personal Details</div>
-                
-                <div class="form-row">
-                    <input type="text" id="p-fname" placeholder="First Name" class="modal-input" style="flex:1;">
-                    <input type="text" id="p-lname" placeholder="Last Name" class="modal-input" style="flex:1;">
-                </div>
-
-                <div class="form-row">
-                    <input type="email" id="p-email" placeholder="Email Address" class="modal-input" style="flex: 1.5;">
-                    <input type="text" id="p-contact" placeholder="Mobile No." class="modal-input" style="flex: 1;">
-                </div>
-
-                <div class="form-row">
-                    <select id="p-gender" class="modal-input" style="flex: 1;">
-                        <option value="" disabled selected>Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                    <select id="p-civil" class="modal-input" style="flex: 1;">
-                        <option value="" disabled selected>Civil Status</option>
-                        <option value="Single">Single</option>
-                        <option value="Married">Married</option>
-                        <option value="Widowed">Widowed</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <div style="flex:1;">
-                        <label style="font-size:11px; color:#666; font-weight:600; margin-left:5px;">Birthdate</label>
-                        <input type="date" id="p-dob" class="modal-input" style="margin-top:2px;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:11px; color:#666; font-weight:600; margin-left:5px;">Nationality</label>
-                        <input type="text" id="p-nationality" placeholder="Filipino" class="modal-input" style="margin-top:2px;">
-                    </div>
-                </div>
-
-                <div class="section-header">Passport Information</div>
-                
-                <div class="form-row">
-                    <div style="flex:1.2;">
-                        <input type="text" id="p-passport" placeholder="Passport Number" class="modal-input" style="width:100%; margin-top:16px;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:11px; color:#666; font-weight:600; margin-left:5px;">Expiry Date</label>
-                        <input type="date" id="p-expiry" class="modal-input" style="margin-top:2px;">
-                    </div>
-                </div>
-
-                <div class="section-header">Emergency Contact</div>
-
-                <div class="form-row">
-                    <input type="text" id="p-emergency-name" placeholder="Contact Person" class="modal-input" style="flex:1.5;">
-                    <input type="text" id="p-emergency-number" placeholder="Emergency Number" class="modal-input" style="flex:1;">
-                </div>
-
+        <div class="passenger-form">
+            <div class="section-header">Personal Details</div>
+            <div class="form-row"><input type="text" id="p-fname" placeholder="First Name"><input type="text" id="p-lname" placeholder="Last Name"></div>
+            <div class="form-row"><input type="email" id="p-email" placeholder="Email Address"><input type="text" id="p-contact" placeholder="Mobile No."></div>
+            <div class="form-row">
+                <select id="p-gender"><option value="" disabled selected>Gender</option><option value="Male">Male</option><option value="Female">Female</option></select>
+                <select id="p-civil"><option value="" disabled selected>Status</option><option value="Single">Single</option><option value="Married">Married</option></select>
             </div>
+            <div class="form-row">
+                <div style="flex:1"><label style="font-size:11px;">Birthdate</label><input type="date" id="p-dob"></div>
+                <div style="flex:1"><label style="font-size:11px;">Nationality</label><input type="text" id="p-nationality" placeholder="Filipino"></div>
+            </div>
+
+            <div class="section-header">Passport Info</div>
+            <div class="form-row">
+                <div style="flex:1"><input type="text" id="p-passport" placeholder="Passport No."></div>
+                <div style="flex:1"><label style="font-size:11px;">Expiry Date</label><input type="date" id="p-expiry"></div>
+            </div>
+
+            <div class="section-header">Emergency Contact</div>
+            <div class="form-row"><input type="text" id="p-emergency-name" placeholder="Contact Person"><input type="text" id="p-emergency-number" placeholder="Contact No."></div>
         </div>
 
-        <div class="modal-footer" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #eee; padding-top:20px;">
-            <div class="total-price" id="modal-total-price" style="font-size:22px; font-weight:bold; color:#d4070f;">₱0</div>
-            <button class="confirm-btn" onclick="submitBookingToDatabase()" style="padding:12px 30px; background:#037FBE; color:white; border:none; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(3,127,190,0.3);">Confirm & Pay</button>
+        <div class="modal-footer" style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+            <div class="total-price" id="modal-total-price">₱0</div>
+            <button class="confirm-btn" onclick="submitBookingToDatabase()">Confirm & Pay</button>
         </div>
     </div>
 </div>
 
 <div id="success-modal" class="modal-overlay hidden">
-    <div class="modal-content success-content" style="text-align: center; max-width:400px;">
+    <div class="modal-content" style="text-align: center; max-width:400px;">
         <span class="close-modal" onclick="closeSuccessModal()">&times;</span>
-        <div style="font-size: 60px; color: #28a745; margin-bottom:10px;">&#10004;</div>
-        <h2 style="color:#333;">Booking Confirmed!</h2>
-        <p style="color:#666;">Saved to Database.</p>
-        <div class="confirmation-box" style="background:#f0f7fc; padding:15px; margin:20px 0; border-radius:8px; border:1px dashed #037FBE;">
-            <p class="ref-label" style="margin:0; font-size:12px; color:#666; text-transform:uppercase;">Booking Reference</p>
-            <h3 id="booking-ref-number" style="margin:5px 0; color:#037FBE; letter-spacing:1px;">PSA-...</h3>
-        </div>
-        <button class="confirm-btn" onclick="closeSuccessModal()" style="margin-top:10px; padding:10px 40px; background:#037FBE; color:white; border:none; border-radius:30px; cursor:pointer;">OK</button>
+        <div style="font-size: 60px; color: #28a745;">&#10004;</div>
+        <h2>Booking Confirmed!</h2>
+        <p>Saved to Database.</p>
+        <button class="confirm-btn" onclick="closeSuccessModal()" style="margin-top:20px;">OK</button>
     </div>
 </div>
 
 <footer class="main-footer">
-    <div class="footer-bottom">
-        <p>&copy; 2025 AERONEXA. All rights reserved.</p>
-    </div>
+    <div class="footer-bottom"><p>&copy; 2025 AERONEXA. All rights reserved.</p></div>
 </footer>
 
 <script>
-    // 1. Show Details Logic
-    function showFlightDetails(id, route, dep, arr, price, flightNum) {
+    // 1. Show Right Panel Logic
+    function showRightPanel(id, route, dep, arr, price, flightNum) {
         const rightPanel = document.getElementById('right-panel');
         const bookingContainer = document.getElementById('booking-container');
         
@@ -342,40 +248,33 @@ $flights = getPSAFlights();
             <p><strong>Time:</strong> ${dep} - ${arr}</p>
             <p><strong>Price:</strong> ₱${price}</p>
             <button class="book-btn" style="width:100%; margin-top:15px;" 
-                onclick="openBookingModal('${id}', '${route}', '${price}', '${flightNum}', '${dep}', '${arr}')">
+                onclick="openBookingModal('${id}', '${route}', '${price}', '${flightNum}')">
                 Proceed to Book
             </button>
         `;
     }
 
-    // 2. Open Modal
-    function openBookingModal(id, route, price, flightNum, dep, arr) {
-        document.getElementById('booking-modal').classList.remove('hidden');
-        
-        document.getElementById('selected-flight-id').value = id;
-        document.getElementById('modal-total-price').innerText = "₱" + price;
-        
-        document.getElementById('modal-flight-details').innerHTML = `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <strong style="color:#333;">Flight: ${flightNum}</strong>
-                <span style="color:#037FBE; font-weight:bold;">${route}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; color:#666; font-size:13px;">
-                <span>Dep: ${dep}</span>
-                <span>Arr: ${arr}</span>
-            </div>
-        `;
+    function closeRightPanel() {
+        document.getElementById('right-panel').classList.add('hidden');
+        document.getElementById('booking-container').classList.remove('three-column');
     }
 
-    // 3. SUBMIT TO DATABASE (Final Fail-Safe Version)
+    // 2. Open Modal Logic
+    function openBookingModal(id, route, price, flightNum) {
+        document.getElementById('booking-modal').classList.remove('hidden');
+        document.getElementById('selected-flight-id').value = id;
+        document.getElementById('modal-total-price').innerText = "₱" + price;
+        document.getElementById('modal-flight-summary').innerText = flightNum + ": " + route;
+    }
+
+    // 3. Submit Logic (FIXED FOR MONGODB)
     async function submitBookingToDatabase() {
         const btn = document.querySelector('.confirm-btn');
         const originalText = btn.innerText;
-        btn.innerText = "Processing...";
-        btn.disabled = true;
+        btn.innerText = "Processing..."; btn.disabled = true;
 
         try {
-            // A. Get Values
+            // A. Gather Data
             const payload = {
                 user_id: "1",
                 first_name: document.getElementById('p-fname').value,
@@ -397,34 +296,40 @@ $flights = getPSAFlights();
             // B. Validate
             if(!payload.first_name || !payload.email || !payload.passport_number || !payload.emergency_contact_name) {
                 alert("Please complete ALL details.");
-                btn.innerText = originalText; btn.disabled = false;
-                return;
+                btn.innerText = originalText; btn.disabled = false; return;
             }
 
             console.log("Creating Passenger...", payload);
 
             // C. Create Passenger
             const passRes = await fetch('http://localhost:8000/api/psa/passengers', {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, 
+                body: JSON.stringify(payload)
             });
             const passData = await passRes.json();
             
-            // D. Extract ID (FAIL-SAFE: Kung wala, gamitin ang "1")
-            let passengerId = passData.id || passData.passenger_id || (passData.data ? passData.data.id : null);
+            if (!passRes.ok) {
+                throw new Error("Passenger Error: " + (passData.message || JSON.stringify(passData)));
+            }
+
+            // D. Extract ID (UPDATED FOR MONGODB)
+            // MongoDB often returns '_id' OR 'id'. We check both.
+            let passengerId = passData.id || passData._id || (passData.data ? (passData.data.id || passData.data._id) : null);
             
             if (!passengerId) {
-                console.warn("ID not found, using Fallback: 1");
-                passengerId = "1"; // Ito ang solusyon sa "Passenger not found"
+                // FALLBACK ONLY IF REALLY NECESSARY, BUT ALERTING TO DEBUG
+                console.warn("ID not found in response:", passData);
+                throw new Error("Passenger created but ID could not be retrieved from MongoDB.");
             }
 
             // E. Book Flight
             let flightDate = document.getElementById('departure').value || new Date().toISOString().split('T')[0];
             const bookRes = await fetch('http://localhost:8000/api/psa/bookings', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
                 body: JSON.stringify({
                     flight_id: document.getElementById('selected-flight-id').value,
                     user_id: "1",
-                    passenger_id: String(passengerId),
+                    passenger_id: String(passengerId), // MongoDB IDs are strings
                     flight_date: flightDate,
                     status: "confirmed",
                     seat_number: "A1",
@@ -432,37 +337,28 @@ $flights = getPSAFlights();
                 })
             });
 
+            const bookData = await bookRes.json();
+
             if(bookRes.ok) {
                 closeBookingModal();
-                openSuccessModal();
+                document.getElementById('success-modal').classList.remove('hidden');
             } else {
-                const err = await bookRes.json();
-                alert("Booking Failed: " + (err.message || JSON.stringify(err)));
+                alert("Booking Failed: " + (bookData.message || JSON.stringify(bookData)));
             }
 
         } catch (e) {
             console.error(e);
             alert("Error: " + e.message);
         } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
+            btn.innerText = originalText; btn.disabled = false;
         }
     }
 
     function closeBookingModal() { document.getElementById('booking-modal').classList.add('hidden'); }
-    
-    function openSuccessModal(refId) {
-        closeBookingModal();
-        const displayRef = refId ? "PSA-DB-" + refId : "PSA-" + Math.floor(Math.random()*10000);
-        document.getElementById('booking-ref-number').innerText = displayRef;
-        document.getElementById('success-modal').classList.remove('hidden');
-    }
-    
     function closeSuccessModal() { document.getElementById('success-modal').classList.add('hidden'); }
 
     document.getElementById('close-details-panel').addEventListener('click', () => {
-        document.getElementById('right-panel').classList.add('hidden');
-        document.getElementById('booking-container').classList.remove('three-column');
+        closeRightPanel();
     });
 </script>
 

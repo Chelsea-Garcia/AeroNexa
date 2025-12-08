@@ -108,29 +108,15 @@ Route::prefix('aureliya')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-use App\Http\Controllers\api\v1\skyroute\LocationController;
-use App\Http\Controllers\api\v1\skyroute\VehicleController;
-use App\Http\Controllers\api\v1\skyroute\BookingController as SkyrouteBookingController;
+use App\Http\Controllers\api\v1\skyroute\BookingController as SkyBookingController;
+use App\Http\Controllers\api\v1\skyroute\LocationController as SkyLocationController;
 
 Route::prefix('skyroute')->group(function () {
-
-    // Locations (origin/destination)
-    Route::get('/locations', [LocationController::class, 'index']);
-    Route::get('/locations/{id}', [LocationController::class, 'show']);
-
-    // Vehicles by city
-    // Get ALL vehicles (Add this line)
-    Route::get('/vehicles', [VehicleController::class, 'index']);
-    Route::get('/vehicles/city/{city}', [VehicleController::class, 'vehiclesByCity']);
-
-    // Bookings
-    Route::post('/bookings', [SkyrouteBookingController::class, 'store']);
-    Route::get('/bookings/user/{user_id}', [SkyrouteBookingController::class, 'userBookings']);
-    Route::get('/booking/{id}', [SkyrouteBookingController::class, 'show']);
-    Route::post('/booking/{id}/cancel', [SkyrouteBookingController::class, 'cancel']);
-
-    // Payment status
-    Route::put('/booking/{id}/status', [SkyrouteBookingController::class, 'updateStatus']);
+    // Kukunin ang listahan ng locations para sa dropdown
+    Route::get('/locations', [SkyLocationController::class, 'index']);
+    
+    // Ang main booking logic
+    Route::post('/bookings', [SkyBookingController::class, 'store']);
 });
 
 /*

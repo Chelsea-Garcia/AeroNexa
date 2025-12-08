@@ -2,39 +2,25 @@
 
 namespace App\Models\psa;
 
-use MongoDB\Laravel\Eloquent\Model;
+// USE MONGODB MODEL (Importante ito!)
+use MongoDB\Laravel\Eloquent\Model; 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Booking extends Model
 {
-    protected $connection = 'philippineskyairway';
-    protected $collection = 'bookings';
+    use HasFactory;
+
+    // --- CRITICAL FIX: ITURO SA MONGODB ---
+    protected $connection = 'mongodb'; 
+    protected $collection = 'bookings'; 
 
     protected $fillable = [
+        'flight_id',
         'user_id',
         'passenger_id',
-        'flight_id',
         'flight_date',
-        'departure_time',
-        'arrival_time',
-        'total_amount',
-        'payment_method',
-        'transaction_code',
-        'payment_status',
+        'status',
+        'seat_number',
+        'booking_date'
     ];
-
-    protected $casts = [
-        'total_amount' => 'float',
-    ];
-
-    // Passenger of the booking
-    public function passenger()
-    {
-        return $this->belongsTo(Passenger::class, 'passenger_id', '_id');
-    }
-
-    // Flight of the booking
-    public function flight()
-    {
-        return $this->belongsTo(Flight::class, 'flight_id', '_id');
-    }
 }

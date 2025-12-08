@@ -2,40 +2,31 @@
 
 namespace App\Models\psa;
 
-use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model; // <--- IMPORTANTE: Gamitin ang MongoDB Model
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Passenger extends Model
 {
-    protected $connection = 'philippineskyairway';
-    protected $collection = 'passengers';
+    use HasFactory;
 
-    protected $primaryKey = '_id';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    protected $connection = 'mongodb';
+    protected $collection = 'passengers';
 
     protected $fillable = [
         'user_id',
         'first_name',
         'last_name',
-        'gender',
+        'email',
+        'contact_number',
         'birthdate',
+        'gender',
         'nationality',
+        'civil_status',
         'passport_number',
         'passport_expiry',
         'special_assistance',
-        'contact_number',
         'emergency_contact_name',
-        'emergency_contact_number'
+        'emergency_contact_number',
+        'type'
     ];
-
-    protected $casts = [
-        'birthdate' => 'string',
-        'passport_expiry' => 'string'
-    ];
-
-    // Passenger can have many bookings
-    public function bookings()
-    {
-        return $this->hasMany(Booking::class, 'passenger_id', '_id');
-    }
 }

@@ -1,40 +1,17 @@
 <?php
-
 namespace App\Models\skyroute;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Booking extends Model
 {
-    protected $connection = 'skyroute';
+    use HasFactory;
+    // CHANGE THIS LINE:
+    protected $connection = 'mongodb_skyroute';
     protected $collection = 'bookings';
-
     protected $fillable = [
-        'user_id',
-        'origin_location_id',
-        'destination_location_id',
-        'vehicle_id',
-        'date',
-        'time',
-        'passenger_name',
-        'payment_method',
-        'payment_status',
-        'estimated_amount',
-        'transaction_code',
+        'user_id', 'vehicle_id', 'origin_location_id', 'destination_location_id', 
+        'date', 'time', 'passengers', 'status'
     ];
-
-    public function origin()
-    {
-        return $this->belongsTo(Location::class, 'origin_location_id');
-    }
-
-    public function destination()
-    {
-        return $this->belongsTo(Location::class, 'destination_location_id');
-    }
-
-    public function vehicle()
-    {
-        return $this->belongsTo(Vehicle::class);
-    }
 }

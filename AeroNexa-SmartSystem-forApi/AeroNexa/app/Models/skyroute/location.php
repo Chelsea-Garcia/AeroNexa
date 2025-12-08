@@ -1,19 +1,14 @@
 <?php
-
 namespace App\Models\skyroute;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Location extends Model
 {
-    protected $connection = 'skyroute';
+    use HasFactory;
+    // CHANGE THIS LINE:
+    protected $connection = 'mongodb_skyroute'; 
     protected $collection = 'locations';
-
-    protected $fillable = [
-        'country',
-        'division',
-        'city',
-        'latitude',
-        'longitude',
-    ];
+    protected $fillable = ['name', 'address'];
 }

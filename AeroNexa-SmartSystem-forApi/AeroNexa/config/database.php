@@ -45,6 +45,26 @@ return [
             'strict' => true,
         ],
 
+        // ... sa ilalim ng mysql block ...
+
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'host' => '127.0.0.1',
+            'port' => 27017,
+            'database' => 'philippineskyairway', // Siguraduhing ito ang pangalan ng DB mo sa Compass
+            'username' => '',
+            'password' => '',
+        ],
+
+        'mongodb_skyroute' => [
+            'driver' => 'mongodb',
+            'host' => '127.0.0.1',
+            'port' => 27017,
+            'database' => 'skyroute', // This must match your Mongo DB name
+            'username' => '',
+            'password' => '',
+        ],
+
         // AeroPay - MySQL
         'aeropay' => [
             'driver' => 'mysql',
