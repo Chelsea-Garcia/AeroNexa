@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\aureliya;
+namespace App\Http\Controllers\api\v1\aureliya; // FIX: Lowercase namespace
 
 use App\Http\Controllers\Controller;
 use App\Models\aureliya\Amenity;
@@ -15,18 +15,5 @@ class AmenityController extends Controller
     public function show($id)
     {
         return Amenity::findOrFail($id);
-    }
-
-    public function store()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
-    }
-    public function update()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
-    }
-    public function destroy()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
     }
 }

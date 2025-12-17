@@ -9,8 +9,10 @@ class Review extends Model
 {
     use HasFactory;
 
+    // FIX: Match the config connection name
     protected $connection = 'aureliya';
     protected $table = 'reviews';
+    
     protected $primaryKey = "_id";
     public $incrementing = false;
     protected $keyType = "string";

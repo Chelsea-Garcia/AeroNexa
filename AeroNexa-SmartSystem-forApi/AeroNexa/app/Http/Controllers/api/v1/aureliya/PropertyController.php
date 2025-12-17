@@ -1,37 +1,31 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\aureliya;
+namespace App\Http\Controllers\api\v1\aureliya;
 
 use App\Http\Controllers\Controller;
 use App\Models\aureliya\Property;
+use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    // GET /properties
     public function index()
     {
-        return Property::with(['amenities'])->get();
-    }
+        try {
+            // 1. Fetch properties directly using the Aureliya Model
+            // (The Model handles the connection to 'aureliya' database)
+            $properties = Property::orderBy('type', 'asc')->get();
 
-    // GET /properties/{id}
-    public function show($id)
-    {
-        $property = Property::with(['amenities'])->findOrFail($id);
+            // 2. Return Data
+            return response()->json($properties);
 
-        return $property;
-    }
-
-    // Admin-only (disabled)
-    public function store()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
-    }
-    public function update()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
-    }
-    public function destroy()
-    {
-        return response()->json(['error' => 'Forbidden'], 403);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Server Error Loading Properties',
+                'technical_error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 }

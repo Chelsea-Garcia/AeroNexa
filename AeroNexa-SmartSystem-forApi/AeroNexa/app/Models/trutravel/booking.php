@@ -22,7 +22,7 @@ class Booking extends Model
         'transaction_code',
         'amount',
         'currency',
-        'payment_status',
+        'payment_status', // <--- Ensure this is here
         'status',
         'payment_breakdown',
         'metadata',

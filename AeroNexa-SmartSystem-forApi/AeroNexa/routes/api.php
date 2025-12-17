@@ -1,175 +1,72 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\trutravel\Package;
+use App\Models\skyroute\Vehicle;
 
-/*
-|--------------------------------------------------------------------------
-| PSA
-|--------------------------------------------------------------------------
-*/
-use App\Http\Controllers\api\v1\psa\FlightController;
-use App\Http\Controllers\api\v1\psa\PassengerController;
-use App\Http\Controllers\api\v1\psa\AirportController;
-use App\Http\Controllers\api\v1\psa\BookingController as PsaBookingController;
-
-Route::prefix('psa')->group(function () {
-
-    // Flights
-    Route::get('/flights', [FlightController::class, 'index']);
-    Route::get('/flights/{id}', [FlightController::class, 'show']);
-    Route::get('/flights/search', [FlightController::class, 'search']);
-
-    // Passengers
-    Route::post('/passengers', [PassengerController::class, 'store']);
-    Route::get('/passengers/user/{user_id}', [PassengerController::class, 'showByUser']);
-    Route::put('/passengers/{id}', [PassengerController::class, 'update']);
-
-    // Airport
-    Route::get('/airports', [AirportController::class, 'index']);
-    Route::get('/airports/{id}', [AirportController::class, 'show']);
-
-    // Bookings
-    Route::post('/bookings', [PsaBookingController::class, 'store']);
-    Route::get('/bookings/{user_id}', [PsaBookingController::class, 'userBookings']);
-    Route::get('/booking/{id}', [PsaBookingController::class, 'show']);
-    Route::put('/booking/{id}/passenger', [PsaBookingController::class, 'updatePassenger']);
-    Route::post('/booking/{id}/cancel', [PsaBookingController::class, 'cancel']);
-
-    // ⭐ NEW — Update Payment Status
-    Route::put('/booking/{id}/status', [PsaBookingController::class, 'updateStatus']);
-});
+// --- 1. PSA (FLIGHTS) ---
+// List Flights
+Route::get('/psa-flights', [\App\Http\Controllers\api\v1\psa\FlightController::class, 'index']);
+// Book Flight
+Route::post('/psa-book', [\App\Http\Controllers\api\v1\psa\BookingController::class, 'store']);
 
 
-/*
-|--------------------------------------------------------------------------
-| AEROPAY (GLOBAL PAYMENT PROVIDER)
-|--------------------------------------------------------------------------
-*/
-
-use App\Http\Controllers\api\v1\aeropay\TransactionController;
-
-Route::prefix('aeropay')->group(function () {
-
-    // Charge from any microservice
-    Route::post('/charge', [TransactionController::class, 'charge']);
-
-    // Read transactions
-    Route::get('/transactions', [TransactionController::class, 'index']);
-    Route::get('/transactions/{id}', [TransactionController::class, 'show']);
-    Route::get('/transactions/user/{user_id}', [TransactionController::class, 'userTransactions']);
-    Route::get('/transactions/status/{status}', [TransactionController::class, 'filterByStatus']);
-
-    // Update payment status
-    Route::put('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
-
-    // Webhook for all services (PSA / Skyroute / Aureliya)
-    Route::post('/webhook', [TransactionController::class, 'webhook']);
-});
+// --- 2. AURELIYA (HOTELS) ---
+// List Properties
+Route::get('/aur-props', [\App\Http\Controllers\api\v1\aureliya\PropertyController::class, 'index']);
+// Book Hotel
+Route::post('/aur-book', [\App\Http\Controllers\api\v1\aureliya\BookingController::class, 'store']);
 
 
-/*
-|--------------------------------------------------------------------------
-| AURELIYA ACCOMMODATIONS
-|--------------------------------------------------------------------------
-*/
+// --- 3. SKYROUTE (TRANSPORT) ---
 
-use App\Http\Controllers\api\v1\aureliya\PropertyController;
-use App\Http\Controllers\api\v1\aureliya\AmenityController;
-use App\Http\Controllers\api\v1\aureliya\ReviewController;
-use App\Http\Controllers\api\v1\aureliya\BookingController as AureliyaBookingController;
+// 🔴 THE MISSING PART: LOCATION DROPDOWNS
+// Calculate Price (Real-time)
+Route::post('/sky-calculate', [\App\Http\Controllers\api\v1\skyroute\BookingController::class, 'calculate']);
+Route::get('/sky-loc/countries', [\App\Http\Controllers\api\v1\skyroute\LocationController::class, 'getCountries']);
+Route::get('/sky-loc/divisions/{country}', [\App\Http\Controllers\api\v1\skyroute\LocationController::class, 'getDivisions']);
+Route::get('/sky-loc/cities/{div}', [\App\Http\Controllers\api\v1\skyroute\LocationController::class, 'getCities']);
 
-Route::prefix('aureliya')->group(function () {
+// Book Ride
+Route::post('/sky-book', [\App\Http\Controllers\api\v1\skyroute\BookingController::class, 'store']);
 
-    Route::get('/properties', [PropertyController::class, 'index']);
-    Route::get('/properties/{id}', [PropertyController::class, 'show']);
+// --- TRUTRAVEL ROUTES ---
+Route::get('/tru-packages', [\App\Http\Controllers\api\v1\trutravel\PackageController::class, 'index']);
+Route::post('/tru-book', [\App\Http\Controllers\api\v1\trutravel\BookingController::class, 'store']);
 
-    Route::get('/amenities', [AmenityController::class, 'index']);
-    Route::get('/amenities/{id}', [AmenityController::class, 'show']);
+// --- 5. AEROPAY (TRANSACTION) ---
+Route::post('/aeropay/charge', [\App\Http\Controllers\api\v1\aeropay\TransactionController::class, 'charge']);
+Route::get('/aeropay/transactions', [\App\Http\Controllers\api\v1\aeropay\TransactionController::class, 'index']);
+Route::put('aeropay/transactions/{transactionCode}/status', [\App\Http\Controllers\api\v1\aeropay\TransactionController::class, 'updateStatus']);
 
-    Route::get('/reviews', [ReviewController::class, 'index']);
-    Route::get('/reviews/{id}', [ReviewController::class, 'show']);
-    Route::post('/reviews', [ReviewController::class, 'store']);
-    Route::put('/reviews/{id}', [ReviewController::class, 'update']);
+// routes/api.php
 
-    // Bookings
-    Route::get('/bookings', [AureliyaBookingController::class, 'index']);
-    Route::get('/bookings/{id}', [AureliyaBookingController::class, 'show']);
-    Route::post('/bookings', [AureliyaBookingController::class, 'store']);
-    Route::put('/bookings/{id}', [AureliyaBookingController::class, 'update']);
-
-    // ⭐ NEW — Update Payment Status
-    Route::put('/booking/{id}/status', [AureliyaBookingController::class, 'updateStatus']);
-});
-
-
-/*
-|--------------------------------------------------------------------------
-| SKYROUTE
-|--------------------------------------------------------------------------
-*/
-
-use App\Http\Controllers\api\v1\skyroute\BookingController as SkyBookingController;
-use App\Http\Controllers\api\v1\skyroute\LocationController as SkyLocationController;
-
-Route::prefix('skyroute')->group(function () {
-    // Kukunin ang listahan ng locations para sa dropdown
-    Route::get('/locations', [SkyLocationController::class, 'index']);
+Route::get('/debug/fix-packages', function () {
+    // 1. Get ALL Real Vehicles from SkyRoute (MongoDB)
+    $realVehicles = Vehicle::all();
     
-    // Ang main booking logic
-    Route::post('/bookings', [SkyBookingController::class, 'store']);
+    if ($realVehicles->isEmpty()) {
+        return "❌ Error: You have NO vehicles in SkyRoute. Create some vehicles first!";
+    }
+
+    // 2. Get ALL Packages (MySQL)
+    $packages = Package::all();
+    $updatedCount = 0;
+
+    foreach ($packages as $pkg) {
+        // Pick a random REAL vehicle
+        $randomVehicle = $realVehicles->random();
+
+        // Overwrite the invalid ID with the Real ID
+        $pkg->skyroute_vehicle_id = $randomVehicle->_id;
+        $pkg->save();
+
+        $updatedCount++;
+    }
+
+    return [
+        "message" => "✅ FIXED!",
+        "packages_updated" => $updatedCount,
+        "new_vehicle_assigned" => "All packages now point to valid SkyRoute vehicles."
+    ];
 });
-
-/*
-|--------------------------------------------------------------------------
-| TruTravel
-|--------------------------------------------------------------------------
-*/
-
-use App\Http\Controllers\api\v1\trutravel\PackageController;
-use App\Http\Controllers\api\v1\trutravel\BookingController as trutravelBookingController;
-
-Route::prefix('trutravel')->group(function () {
-    // Packages
-    Route::get('/packages', [PackageController::class, 'index']);
-    Route::get('/packages/{id}', [PackageController::class, 'show']);
-
-    // Bookings
-    Route::post('/bookings', [trutravelBookingController::class, 'store']);
-    Route::get('/bookings/user/{user_id}', [trutravelBookingController::class, 'userBookings']);
-    Route::get('/booking/{id}', [trutravelBookingController::class, 'show']);
-});
-
-Route::prefix('trutravel')->group(function () {
-    // Packages
-    Route::get('/packages', [PackageController::class, 'index']);
-    Route::get('/packages/{id}', [PackageController::class, 'show']);
-
-    // Bookings
-    Route::post('/bookings', [trutravelBookingController::class, 'store']);
-    Route::get('/bookings/user/{user_id}', [trutravelBookingController::class, 'userBookings']);
-    Route::get('/booking/{id}', [trutravelBookingController::class, 'show']);
-
-    // NEW ROUTES - Add these
-    Route::post('/booking/{id}/cancel', [trutravelBookingController::class, 'cancel']);
-    Route::put('/booking/{id}/status', [trutravelBookingController::class, 'updateStatus']);
-    Route::post('/webhook', [trutravelBookingController::class, 'webhook']);
-});
-
-use App\Http\Controllers\api\v1\aeronexa\UserController;
-
-Route::prefix('aeronexa')->group(function () {
-    Route::get('users', [UserController::class, 'index']);
-    Route::get('users/{id}', [UserController::class, 'show']);
-    Route::post('users', [UserController::class, 'store']);
-    Route::put('users/{id}', [UserController::class, 'update']);
-    Route::delete('users/{id}', [UserController::class, 'destroy']);
-
-
-    // simple login (no tokens)
-    Route::post('users/login', [UserController::class, 'login']);
-});
-
-use App\Http\Controllers\PublicBookingController;
-
-// Ito ang tatawagin ng Frontend niyo: (POST) http://localhost:YOUR_PORT/api/hotel-booking
-Route::post('/hotel-booking', [PublicBookingController::class, 'bookHotel']);

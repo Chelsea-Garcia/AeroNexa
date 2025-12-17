@@ -1,369 +1,193 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\trutravel;
+namespace App\Http\Controllers\api\v1\trutravel;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use App\Models\trutravel\Booking;
-use App\Models\trutravel\Package;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
-use App\Traits\HandlesAeroPay;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Log;
+
+// MODELS
+use App\Models\trutravel\Booking as TruBooking;
+use App\Models\trutravel\Package;
+use App\Models\psa\Booking as PsaBooking;
+use App\Models\aureliya\Booking as AurBooking;
+use App\Models\skyroute\Booking as SkyBooking;
+use App\Models\skyroute\Location as SkyLocation;
+use App\Models\skyroute\Vehicle as SkyVehicle;
+
+// TRAIT
+use App\Traits\HandlesAeroPay; 
 
 class BookingController extends Controller
 {
-    use HandlesAeroPay;
+    use HandlesAeroPay; 
 
-    /**
-     * Create a package booking on TruTravel and reserve partner bookings.
-     */
     public function store(Request $req)
-    {
-        $data = $req->validate([
-            'user_id' => 'required|string',
-            'package_id' => 'required|string',
-            'travel_date' => 'required|date|after_or_equal:today',
-            'passenger_name' => 'required|string',
-            'passenger_id' => 'required|string',
-        ]);
-
-        // Resolve package
-        $package = Package::find($data['package_id']);
-        if (!$package) {
-            return response()->json(['error' => 'Package not found'], 404);
-        }
-
-        // Compute dates
-        $nights = $package->nights ?? 2;
-        $travelDate = Carbon::parse($data['travel_date']);
-        $returnDate = $travelDate->copy()->addDays($nights);
-
-        // 1. Create local TruTravel booking (Pending)
-        $ttBooking = Booking::create([
-            'user_id' => $data['user_id'],
-            'package_id' => $data['package_id'],
-            'travel_date' => $travelDate->format('Y-m-d'),
-            'return_date' => $returnDate->format('Y-m-d'),
-            'amount' => $package->final_price,
-            'currency' => $package->currency ?? 'PHP',
-            'status' => 'pending',
-            'payment_status' => 'pending',
-        ]);
-
-        $partnerBookings = [];
-
-        // Base URLs
-        $psaBase  = 'http://localhost:8000/api/psa';
-        $aureBase = 'http://localhost:8002/api/aureliya';
-        $srBase   = 'http://localhost:8003/api/skyroute';
-
-        try {
-            // -------------------------
-            // 2. Reserve Partner Bookings
-            // -------------------------
-
-            // A) PSA — Outbound
-            try {
-                $psaResp = Http::post("{$psaBase}/bookings", [
-                    'user_id' => $data['user_id'],
-                    'passenger_id' => $data['passenger_id'],
-                    'flight_id' => $package->airline_flight_id,
-                    'flight_date' => $travelDate->format('Y-m-d'),
-                    'payment_origin' => 'TRUTRAVEL',
-                    'skip_aeropay' => true,
-                ]);
-                $psaResp->throw();
-                $partnerBookings['psa_outbound_id'] = $this->extractBookingId($psaResp->json());
-            } catch (\Exception $e) {
-                throw new \Exception("PSA Outbound Booking Failed: " . $e->getMessage());
-            }
-
-            // B) PSA — Return (Optional)
-            if (!empty($package->airline_return_flight_id)) {
-                try {
-                    $psaRetResp = Http::post("{$psaBase}/bookings", [
-                        'user_id' => $data['user_id'],
-                        'passenger_id' => $data['passenger_id'],
-                        'flight_id' => $package->airline_return_flight_id,
-                        'flight_date' => $returnDate->format('Y-m-d'),
-                        'payment_origin' => 'TRUTRAVEL',
-                        'skip_aeropay' => true,
-                    ]);
-                    $psaRetResp->throw();
-                    $partnerBookings['psa_return_id'] = $this->extractBookingId($psaRetResp->json());
-                } catch (\Exception $e) {
-                    throw new \Exception("PSA Return Booking Failed: " . $e->getMessage());
-                }
-            }
-
-            // C) Aureliya — Accommodation
-            try {
-                $aureResp = Http::post("{$aureBase}/bookings", [
-                    'user_id' => $data['user_id'],
-                    'property_id' => $package->aureliya_property_id,
-                    'check_in' => $travelDate->format('Y-m-d'),
-                    'check_out' => $returnDate->format('Y-m-d'),
-                    'payment_origin' => 'TRUTRAVEL',
-                    'skip_aeropay' => true,
-                ]);
-                $aureResp->throw();
-                $partnerBookings['aureliya_id'] = $this->extractBookingId($aureResp->json());
-            } catch (\Exception $e) {
-                throw new \Exception("Aureliya Booking Failed: " . $e->getMessage());
-            }
-
-            // D) SkyRoute — Transfers (Optional)
-            if (!empty($package->skyroute_vehicle_id)) {
-                // Outbound
-                try {
-                    $srOutResp = Http::post("{$srBase}/bookings", [
-                        'user_id' => $data['user_id'],
-                        'vehicle_id' => $package->skyroute_vehicle_id,
-                        'origin_location_id' => $package->skyroute_origin_id,
-                        'destination_location_id' => $package->skyroute_destination_id,
-                        'date' => $travelDate->format('Y-m-d'),
-                        'time' => '14:00',
-                        'passenger_name' => $data['passenger_name'],
-                        'payment_origin' => 'TRUTRAVEL',
-                        'skip_aeropay' => true,
-                    ]);
-                    $srOutResp->throw();
-                    $partnerBookings['skyroute_outbound_id'] = $this->extractBookingId($srOutResp->json());
-                } catch (\Exception $e) {
-                    throw new \Exception("SkyRoute Outbound Failed: " . $e->getMessage());
-                }
-
-                // Return
-                try {
-                    $srRetResp = Http::post("{$srBase}/bookings", [
-                        'user_id' => $data['user_id'],
-                        'vehicle_id' => $package->skyroute_vehicle_id,
-                        'origin_location_id' => $package->skyroute_destination_id,
-                        'destination_location_id' => $package->skyroute_origin_id,
-                        'date' => $returnDate->format('Y-m-d'),
-                        'time' => '10:00',
-                        'passenger_name' => $data['passenger_name'],
-                        'payment_origin' => 'TRUTRAVEL',
-                        'skip_aeropay' => true,
-                    ]);
-                    $srRetResp->throw();
-                    $partnerBookings['skyroute_return_id'] = $this->extractBookingId($srRetResp->json());
-                } catch (\Exception $e) {
-                    throw new \Exception("SkyRoute Return Failed: " . $e->getMessage());
-                }
-            }
-
-            // Save partner IDs locally
-            $ttBooking->update([
-                'payment_breakdown' => json_encode($partnerBookings),
-            ]);
-
-            // -------------------------
-            // 3. Create AeroPay Transaction
-            // -------------------------
-            $aeropay = $this->createAeroPayPayment(
-                $data['user_id'],
-                $package->final_price,
-                $ttBooking->getKey(),
-                'TRUTRAVEL',
-                [
-                    'package_id' => $package->id ?? $package->getKey(),
-                    'package_name' => $package->name,
-                    'partner_bookings' => $partnerBookings,
-                ]
-            );
-
-            // Log response for debugging
-            Log::info("AeroPay Response for Booking {$ttBooking->getKey()}", $aeropay);
-
-            if (!$aeropay['success']) {
-                throw new \Exception('AeroPay transaction failed: ' . ($aeropay['message'] ?? 'unknown error'));
-            }
-
-            // ROBUST EXTRACTION: Check root, then data, then payload
-            $transactionCode = $aeropay['transaction_code']
-                ?? $aeropay['data']['transaction_code']
-                ?? $aeropay['payload']['transaction_code']
-                ?? null;
-
-            if (empty($transactionCode)) {
-                // If success is true but code is missing, Fail hard so we don't have null codes
-                throw new \Exception("AeroPay returned success but Transaction Code is missing. Response: " . json_encode($aeropay));
-            }
-
-            // Update local booking
-            $ttBooking->update(['transaction_code' => $transactionCode]);
-
-            // -------------------------
-            // 4. Sync Partners
-            // -------------------------
-            $this->updatePartnerTransactions($partnerBookings, $transactionCode, 'pending');
-
-            return response()->json([
-                'message' => 'Booking created successfully',
-                'data' => [
-                    'booking' => $ttBooking->fresh(),
-                    'package' => $package,
-                    'partner_bookings' => $partnerBookings,
-                ],
-                'payment' => [
-                    'transaction_code' => $transactionCode,
-                    'amount' => $package->final_price,
-                    'status' => 'pending',
-                ]
-            ], 201);
-        } catch (\Exception $e) {
-            // Rollback (Best Effort)
-            Log::error("TruTravel Booking Error: " . $e->getMessage());
-            $this->cancelPartnerBookings($partnerBookings);
-
-            $ttBooking->update([
-                'status' => 'failed',
-                'payment_status' => 'failed',
-            ]);
-
-            return response()->json([
-                'error' => 'Booking failed',
-                'message' => $e->getMessage(),
-                'details' => $partnerBookings
-            ], 500);
-        }
+{
+    // A. VALIDATION
+    if (!$req->package_id || !$req->travel_date) {
+        return response()->json(['error' => 'Missing Package ID or Travel Date'], 400);
     }
 
-    /**
-     * Extract booking id from partner response
-     */
-    private function extractBookingId(array $json)
-    {
-        if (isset($json['data']['_id'])) return $json['data']['_id'];
-        if (isset($json['data']['id'])) return $json['data']['id'];
-        if (isset($json['_id'])) return $json['_id'];
-        if (isset($json['id'])) return $json['id'];
-        return null;
+    // 1. Get Guest Count (Default 2)
+    $guests = (int) ($req->guests ?? 2);
+    if ($guests < 1) $guests = 1;
+
+    $pickupTime = $req->travel_time ?? '08:00';
+
+    $package = Package::find($req->package_id);
+    if (!$package) return response()->json(['error' => 'Package not found'], 404);
+
+    // B. CALCULATE DATES
+    $startDate = Carbon::parse($req->travel_date);
+    $endDate = $startDate->copy()->addDays((int) $package->nights);
+    $travelDateStr = $startDate->format('Y-m-d');
+    $returnDateStr = $endDate->format('Y-m-d');
+
+    // C. FIND VEHICLE (Strict Mode)
+    $skyVeh = SkyVehicle::find($package->skyroute_vehicle_id);
+    if (!$skyVeh) {
+        $skyVeh = SkyVehicle::where('_id', $package->skyroute_vehicle_id)->first();
+    }
+    if (!$skyVeh) {
+        return response()->json([
+            'error' => 'Data Integrity Error: The Vehicle linked to this package does not exist in SkyRoute.',
+            'missing_vehicle_id' => $package->skyroute_vehicle_id
+        ], 404);
     }
 
-    /**
-     * Send transaction code + payment_status to partner bookings
-     */
-    private function updatePartnerTransactions(array $bookings, ?string $transactionCode, string $paymentStatus = 'pending')
-    {
-        $psaBase  = 'http://localhost:8000/api/psa';
-        $aureBase = 'http://localhost:8002/api/aureliya';
-        $srBase   = 'http://localhost:8003/api/skyroute';
+    // 2. CALCULATE TOTAL PRICE (Price x Guests)
+    $totalAmount = $package->final_price * $guests;
 
-        $payload = [
-            'payment_status' => $paymentStatus,
-            'transaction_code' => $transactionCode,
-        ];
+    // D. PREPARE IDs
+    $userId = (string) (TruBooking::count() + 1);
+    $bookingUuid = (string) Str::uuid(); 
 
-        // PSA
-        if (!empty($bookings['psa_outbound_id'])) Http::put("{$psaBase}/booking/{$bookings['psa_outbound_id']}/status", $payload);
-        if (!empty($bookings['psa_return_id'])) Http::put("{$psaBase}/booking/{$bookings['psa_return_id']}/status", $payload);
+    $metadata = [
+        "package_name"   => $package->name,
+        "payment_method" => "AeroPay",
+        "guests"         => $guests,
+        "travel_date"    => $travelDateStr,
+        "pickup_time"    => $pickupTime, // <--- Added to AeroPay receipt
+        "return_date"    => $returnDateStr
+    ];
 
-        // Aureliya
-        if (!empty($bookings['aureliya_id'])) Http::put("{$aureBase}/booking/{$bookings['aureliya_id']}/status", $payload);
+    // E. PROCESS PAYMENT (For the TOTAL amount)
+    $paymentResponse = $this->createAeroPayPayment(
+        $userId,
+        $totalAmount,    // <--- Paying for everyone
+        $bookingUuid,   
+        'TRUTRAVEL',    
+        $metadata,      
+        'confirmed'     
+    );
 
-        // SkyRoute
-        if (!empty($bookings['skyroute_outbound_id'])) Http::put("{$srBase}/booking/{$bookings['skyroute_outbound_id']}/status", $payload);
-        if (!empty($bookings['skyroute_return_id'])) Http::put("{$srBase}/booking/{$bookings['skyroute_return_id']}/status", $payload);
+    if (!$paymentResponse['success']) {
+        return response()->json(['error' => 'Payment Error: ' . $paymentResponse['message']], 500);
     }
 
-    /**
-     * Cancel partner bookings
-     */
-    private function cancelPartnerBookings(array $bookings)
-    {
-        $psaBase  = 'http://localhost:8000/api/psa';
-        $aureBase = 'http://localhost:8002/api/aureliya';
-        $srBase   = 'http://localhost:8003/api/skyroute';
+    $trxCode = $paymentResponse['transaction_code'];
 
-        foreach ($bookings as $key => $id) {
-            if (empty($id)) continue;
-            try {
-                if (str_contains($key, 'psa')) Http::post("{$psaBase}/booking/{$id}/cancel");
-                elseif (str_contains($key, 'aureliya')) Http::put("{$aureBase}/booking/{$id}/status", ['payment_status' => 'cancelled']);
-                elseif (str_contains($key, 'skyroute')) Http::post("{$srBase}/booking/{$id}/cancel");
-            } catch (\Exception $e) {
-                // Ignore rollback errors
-            }
-        }
-    }
+    // F. SEED PSA (FLIGHTS)
+    // Note: Ideally you create 1 row per passenger, but for this simple system, 
+    // we just book the main user twice (Outbound/Return).
+    $psaOut = PsaBooking::create([
+        '_id' => (string) Str::uuid(),
+        'user_id' => $userId,
+        'flight_id' => $package->airline_flight_id, 
+        'flight_date' => $travelDateStr,
+        'status' => 'confirmed',
+        'transaction_code' => $trxCode,
+        'booking_date' => now(),
+        'payment_method' => 'TRUTRAVEL', 
+        'total_price' => 0 
+    ]);
 
-    /**
-     * List user bookings
-     */
-    public function userBookings($id)
-    {
-        $bookings = Booking::where('user_id', $id)
-            ->with('package')
-            ->orderBy('created_at', 'desc')
-            ->get();
+    $psaRet = PsaBooking::create([
+        '_id' => (string) Str::uuid(),
+        'user_id' => $userId,
+        'flight_id' => $package->airline_return_flight_id, 
+        'flight_date' => $returnDateStr,
+        'status' => 'confirmed',
+        'transaction_code' => $trxCode, 
+        'booking_date' => now(),
+        'payment_method' => 'TRUTRAVEL',
+        'total_price' => 0 
+    ]);
 
-        return response()->json(['data' => $bookings]);
-    }
+    // G. SEED AURELIYA (HOTEL) - Updates Guest Count
+    $aur = AurBooking::create([
+        '_id' => (string) Str::uuid(),
+        'user_id' => $userId,
+        'property_id' => $package->aureliya_property_id,
+        'check_in' => $travelDateStr,
+        'check_out' => $returnDateStr,
+        'guests' => $guests, // <--- Correct Guest Count
+        'total_price' => $totalAmount, // Full package price stored here or split as needed
+        'status' => 'confirmed',
+        'payment_status' => 'paid', 
+        'transaction_code' => $trxCode,
+        'booking_date' => now(),
+        'payment_method' => 'TRUTRAVEL'
+    ]);
 
-    /**
-     * Show booking
-     */
-    public function show($id)
-    {
-        $booking = Booking::with('package')->find($id);
-        if (!$booking) return response()->json(['error' => 'Booking not found'], 404);
-        return response()->json(['data' => $booking]);
-    }
+    // H. SEED SKYROUTE (TRANSPORT) - Updates Passenger Count
+    $skyOrigin = SkyLocation::find($package->skyroute_origin_id);
+    $skyDest = SkyLocation::find($package->skyroute_destination_id);
+    
+    $sky = SkyBooking::create([
+        '_id' => (string) Str::uuid(),
+        'user_id' => $userId,
+        'transaction_code' => $trxCode,
+        'origin_location_id' => $package->skyroute_origin_id,
+        'destination_location_id' => $package->skyroute_destination_id,
+        'vehicle_id' => $package->skyroute_vehicle_id,
+        'vehicle_plate' => $skyVeh->plate_number, 
+        'vehicle_name'  => $skyVeh->name, 
+        'vehicle_type'  => $skyVeh->type ?? 'Package Vehicle',
+        'origin_city' => $skyOrigin->city ?? 'Unknown',
+        'destination_city' => $skyDest->city ?? 'Unknown',
+        
+        'date' => $travelDateStr,
+        'time' => $pickupTime, // <--- SAVED HERE
+        
+        'passengers' => $guests, 
+        'total_price' => $totalAmount, 
+        'status' => 'confirmed',
+        'payment_status' => 'confirmed', 
+        'created_at' => now(),
+        'payment_method' => 'TRUTRAVEL'
+    ]);
 
-    /**
-     * Cancel booking
-     */
-    public function cancel($id)
-    {
-        $booking = Booking::find($id);
-        if (!$booking) return response()->json(['error' => 'Booking not found'], 404);
+    // I. SAVE TRUTRAVEL BOOKING
+    $booking = TruBooking::create([
+        '_id' => $bookingUuid,
+        'user_id' => $userId,
+        'package_id' => $package->_id,
+        'travel_date' => $travelDateStr,
+        'return_date' => $returnDateStr,
+        'amount' => $totalAmount, // <--- Save Total Price
+        'transaction_code' => $trxCode,
+        'status' => 'confirmed',
+        'payment_status' => 'paid', 
+        'created_at' => now(),
+        'payment_breakdown' => json_encode([
+            'psa_outbound' => $psaOut->_id,
+            'psa_return' => $psaRet->_id,
+            'aureliya' => $aur->id ?? $aur->_id,
+            'skyroute' => $sky->id ?? $sky->_id
+        ])
+    ]);
 
-        $this->updateAeroPayStatus($booking->transaction_code, 'cancelled');
-        $partnerBookings = json_decode($booking->payment_breakdown, true) ?? [];
-        $this->cancelPartnerBookings($partnerBookings);
-
-        $booking->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);
-
-        return response()->json(['message' => 'Booking cancelled']);
-    }
-
-    /**
-     * Update status
-     */
-    public function updateStatus($id, Request $req)
-    {
-        $booking = Booking::find($id);
-        if (!$booking) return response()->json(['error' => 'Not found'], 404);
-        $booking->update($req->all());
-        return response()->json(['message' => 'Updated', 'data' => $booking]);
-    }
-
-    /**
-     * Webhook
-     */
-    public function webhook(Request $req)
-    {
-        $data = $req->validate([
-            'transaction_code' => 'required|string',
-            'status' => 'required|string',
-        ]);
-
-        $booking = Booking::where('transaction_code', $data['transaction_code'])->first();
-        if (!$booking) return response()->json(['error' => 'Not found'], 404);
-
-        $booking->payment_status = $data['status'];
-        if (in_array($data['status'], ['completed', 'paid'])) $booking->status = 'confirmed';
-        elseif (in_array($data['status'], ['failed', 'cancelled'])) $booking->status = 'failed';
-
-        $booking->save();
-
-        $partnerBookings = json_decode($booking->payment_breakdown, true) ?? [];
-        $this->updatePartnerTransactions($partnerBookings, $data['transaction_code'], $data['status']);
-
-        return response()->json(['message' => 'Updated']);
-    }
+    return response()->json([
+        'message' => 'Package Booked Successfully!',
+        'user_id' => $userId,
+        'package' => $package->name,
+        'transaction_code' => $trxCode,
+        'vehicle_assigned' => $skyVeh->name . ' (' . $skyVeh->plate_number . ')',
+        'total_price' => $totalAmount,
+        'dates' => "$travelDateStr to $returnDateStr"
+    ]);
+}
 }

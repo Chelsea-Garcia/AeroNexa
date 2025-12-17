@@ -1,34 +1,41 @@
 <?php
-
 namespace App\Models\aureliya;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Booking extends Model
 {
     use HasFactory;
 
-    protected $connection = 'aureliya';
+    protected $connection = 'aureliya'; 
     protected $table = 'bookings';
-    protected $primaryKey = "_id";
+    protected $primaryKey = '_id';
     public $incrementing = false;
-    protected $keyType = "string";
+    protected $keyType = 'string';
 
     protected $fillable = [
-        '_id',
-        'user_id',
-        'property_id',
-        'check_in',
-        'check_out',
-        'total_price',
+        '_id', 
+        'user_id', 
+        'property_id', 
+        'check_in', 
+        'check_out', 
+        'guests', 
+        'total_price', 
+        'status', 
+        'payment_status', // <--- ADDED THIS
         'payment_method',
-        'payment_status',
-        'transaction_code',
+        'transaction_code' 
     ];
 
-    public function property()
+    protected static function boot()
     {
-        return $this->belongsTo(Property::class, 'property_id');
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+        });
     }
 }

@@ -9,12 +9,14 @@ class Amenity extends Model
 {
     use HasFactory;
 
-    protected $connection = 'aureliya';
+    // FIX: Match the config connection name
+    protected $connection = 'aureliya'; 
     protected $table = 'amenities';
+    
     protected $primaryKey = "_id";
     public $incrementing = false;
     protected $keyType = "string";
-    public $timestamps = false; //  <<< DISABLE TIMESTAMPS
+    public $timestamps = false;
 
     protected $fillable = [
         '_id',

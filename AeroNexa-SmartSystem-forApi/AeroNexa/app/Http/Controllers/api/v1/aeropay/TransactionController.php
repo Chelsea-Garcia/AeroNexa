@@ -16,22 +16,27 @@ class TransactionController extends Controller
     public function charge(Request $request)
     {
         try {
+            // 🔴 FIX: Add 'transaction_code' to the allowed list.
+            // This allows the code sent from Aureliya/Trait to be saved.
             $data = $request->validate([
                 'user_id' => 'required|string',
-                'partner' => 'required|string',               // psa | aureliya | skyroute
-                'partner_reference_id' => 'required|string', // booking_id
+                'transaction_code' => 'required|string', // <--- ADD THIS
+                'partner' => 'required|string',
+                'partner_reference_id' => 'required|string',
                 'amount' => 'required|numeric',
                 'currency' => 'required|string',
-                'status' => 'required|string',               // pending initially
+                'status' => 'required|string',
                 'metadata' => 'nullable|array'
             ]);
 
             $transaction = Transaction::create($data);
 
             return response()->json([
+                'success' => true,
                 'transaction_code' => $transaction->transaction_code,
                 'status' => $transaction->status
             ], 201);
+
         } catch (\Exception $e) {
             Log::error("AeroPay Charge Error: " . $e->getMessage());
 

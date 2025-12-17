@@ -7,181 +7,123 @@ use App\Models\psa\Booking;
 use App\Models\psa\Flight;
 use App\Models\psa\Passenger;
 use Illuminate\Http\Request;
-use App\Traits\HandlesAeroPay;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class BookingController extends Controller
 {
-    use HandlesAeroPay;
+    // --- 1. LIST FLIGHTS ---
+    public function index()
+    {
+        return response()->json(Flight::all());
+    }
 
+    // --- 2. CREATE BOOKING ---
     public function store(Request $req)
     {
-        $data = $req->validate([
-            'user_id'      => 'required|string',
-            'passenger_id' => 'required|string',
-            'flight_id'    => 'required|string',
-            'flight_date'  => 'required|date',
-            'transaction_code' => 'nullable|string', // <-- added
-            'payment_method' => 'nullable|string|in:AEROPAY,TRUTRAVEL',
+        // A. VALIDATION (Only validate what the User Inputs)
+        $validator = Validator::make($req->all(), [
+            'flight_id' => 'required|string',
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'email' => 'required|email',
+            'contact_number' => 'required|string',
+            'gender' => 'required|string',
+            'birthdate' => 'required|date',
+            'nationality' => 'required|string',
+            'passport_number' => 'required|string',
+            'passport_expiry' => 'required|date',
+            // Optional fields
+            'special_assistance' => 'nullable|string',
+            'emergency_contact_name' => 'nullable|string',
+            'emergency_contact_number' => 'nullable|string',
         ]);
 
-        $passenger = Passenger::find($data['passenger_id']);
-        $flight = Flight::find($data['flight_id']);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation Failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        if (!$passenger) return response()->json(['error' => 'Passenger not found'], 404);
-        if (!$flight) return response()->json(['error' => 'Flight not found'], 404);
+        // B. FIND FLIGHT
+        // Force MongoDB string lookup
+        $flight = Flight::where('_id', $req->flight_id)->first();
+
+        // Debugging: If it fails, tell us exactly what ID we looked for
+        if (!$flight) {
+            return response()->json([
+                'error' => 'Flight not found',
+                'received_id' => $req->flight_id // This helps you see if the ID is empty!
+            ], 404);
+        }
+
+        // C. CREATE PASSENGER (The ID comes from here!)
+        $passenger = Passenger::create([
+            '_id' => (string) Str::uuid(),
+            'first_name' => $req->first_name,
+            'last_name' => $req->last_name,
+            'email' => $req->email,
+            'contact_number' => $req->contact_number,
+            'gender' => $req->gender,
+            'birthdate' => $req->birthdate,
+            'nationality' => $req->nationality,
+            'passport_number' => $req->passport_number,
+            'passport_expiry' => $req->passport_expiry,
+            'special_assistance' => $req->special_assistance,
+            'emergency_contact_name' => $req->emergency_contact_name,
+            'emergency_contact_number' => $req->emergency_contact_number,
+        ]);
+
+        // D. CREATE BOOKING (Auto-fill the missing data)
+        $amount = $flight->price ?? 2500.00;
+        $trxCode = 'APAY-' . strtoupper(Str::random(10));
+        
+        // Auto-generate User ID (or use a placeholder)
+        $nextId = Booking::count() + 1;
+        $newUserId = $nextId;
+
+        // Get Date from Flight (Database) instead of User Input
+        $flightDate = $flight->departure_time ?? now();
 
         $booking = Booking::create([
-            '_id'            => Str::uuid()->toString(),
-            'user_id'        => $data['user_id'],
-            'passenger_id'   => $passenger->_id,
-            'flight_id'      => $flight->_id,
-            'flight_date'    => $data['flight_date'],
-            'departure_time' => substr($flight->departure_time, 0, 5),
-            'arrival_time'   => substr($flight->arrival_time, 0, 5),
-            'total_amount'   => $flight->price,
-            'payment_method' => 'AEROPAY',
-            'payment_status' => 'pending',
+            '_id' => (string) Str::uuid(),
+            'user_id' => $newUserId,          // Auto-generated
+            'passenger_id' => $passenger->_id, // From the new passenger above
+            'flight_id' => $flight->_id,
+            'flight_date' => $flightDate,      // From Flight DB
+            'status' => 'confirmed',
+            'transaction_code' => $trxCode,
+            'booking_date' => now(),
         ]);
 
-        /** ---------------------------------------------
-         * 1️⃣ TRUTRAVEL BOOKING (transaction sent)
-         * --------------------------------------------*/
-
-        // After creating booking, check payment method
-        if (($data['payment_method'] ?? 'AEROPAY') === 'TRUTRAVEL') {
-            return response()->json([
-                'message' => 'Booking created via TruTravel',
-                'data' => $booking
+        // E. SEED AEROPAY
+        try {
+            DB::connection('aeropay')->table('transactions')->insert([
+                '_id' => (string) Str::uuid(),
+                'transaction_code' => $trxCode,
+                'user_id' => $newUserId,
+                'partner' => 'PSA',
+                'partner_reference_id' => $booking->_id,
+                'amount' => $amount,
+                'currency' => 'PHP',
+                'status' => 'pending',
+                'metadata' => json_encode([
+                    'flight' => $flight->flight_number ?? 'Unknown Flight',
+                    'route' => ($flight->origin ?? '?') . ' -> ' . ($flight->destination ?? '?'),
+                    'passenger' => $passenger->first_name . ' ' . $passenger->last_name
+                ]),
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
-        }
+        } catch (\Exception $e) { /* Ignore errors for seeding */ }
 
-        // Otherwise continue with normal AeroPay flow...
-        if (!empty($data['transaction_code'])) {
-
-            $booking->update([
-                'transaction_code' => $data['transaction_code'],
-                'payment_status'   => 'pending',
-            ]);
-
-            return ['message' => 'PSA booking created via TruTravel', 'data' => $booking];
-        }
-
-        /** NORMAL AEROPAY HANDLING */
-        $tx = $this->createAeroPayPayment(
-            $data['user_id'],
-            $flight->price,
-            $booking->_id,
-            'PSA',
-            [
-                'flight_id'  => $flight->_id,
-                'passenger'  => $passenger->first_name . " " . $passenger->last_name
-            ]
-        );
-
-        if (!$tx['success']) {
-            return response()->json(['error' => $tx['message']], 500);
-        }
-
-        $booking->update([
-            'transaction_code' => $tx['transaction_code'],
-            'payment_status'   => $tx['status'],
-        ]);
-
-        return ['message' => 'PSA booking created', 'data' => $booking];
+        return response()->json([
+            'message' => 'Booking Successful',
+            'booking_id' => $booking->_id,
+            'passenger_id' => $passenger->_id, // Proof it worked
+            'auto_user_id' => $newUserId
+        ], 201);
     }
-
-    public function userBookings($id)
-    {
-        return Booking::where('user_id', $id)->get();
-    }
-
-    public function show($id)
-    {
-        $booking = Booking::find($id);
-        if (!$booking) return response()->json(['error' => 'Not found'], 404);
-        return $booking;
-    }
-
-    /** Cancel + sync AeroPay */
-    public function cancel($id)
-    {
-        $booking = Booking::find($id);
-        if (!$booking) return response()->json(['error' => 'Not found'], 404);
-
-        $this->updateAeroPayStatus($booking->transaction_code, 'cancelled');
-
-        $booking->payment_status = 'cancelled';
-        $booking->save();
-
-        return ['message' => 'Booking cancelled'];
-    }
-
-    /** Payment status updater */
-    public function updateStatus(Request $req, $id)
-    {
-        $data = $req->validate([
-            'payment_status' => 'sometimes|string|in:pending,paid,failed,cancelled',
-            'transaction_code' => 'sometimes|string', // For TruTravel to set transaction code
-        ]);
-
-        $booking = Booking::find($id);
-
-        if (!$booking) {
-            return response()->json(['error' => 'Booking not found'], 404);
-        }
-
-        // -----------------------------------------
-        // 1️⃣ If TruTravel is sending transaction_code, save it
-        // -----------------------------------------
-        if (isset($data['transaction_code'])) {
-            $booking->transaction_code = $data['transaction_code'];
-            $booking->save();
-
-            return response()->json([
-                'message' => 'Transaction code updated',
-                'booking' => $booking
-            ]);
-        }
-
-        // -----------------------------------------
-        // 2️⃣ Update payment status (if provided)
-        // -----------------------------------------
-        if (isset($data['payment_status'])) {
-            $booking->payment_status = $data['payment_status'];
-            $booking->save();
-
-            // -----------------------------------------
-            // 3️⃣ Sync with AeroPay (if transaction exists)
-            // -----------------------------------------
-            if ($booking->transaction_code) {
-                $aero = $this->updateAeroPayStatus(
-                    $booking->transaction_code,
-                    $data['payment_status']
-                );
-
-                if (!$aero['success']) {
-                    return response()->json([
-                        'warning' => 'Booking updated, but AeroPay update failed',
-                        'details' => $aero['message'],
-                        'booking' => $booking
-                    ], 202);
-                }
-
-                return response()->json([
-                    'message' => 'Payment status updated successfully',
-                    'aeropay' => $aero['data'] ?? null,
-                    'booking' => $booking
-                ]);
-            }
-
-            // If no transaction_code yet, just return updated booking
-            return response()->json([
-                'message' => 'Payment status updated',
-                'booking' => $booking
-            ]);
-        }
-
-        return response()->json(['error' => 'No valid update data provided'], 400);
-    }
-}
+}   

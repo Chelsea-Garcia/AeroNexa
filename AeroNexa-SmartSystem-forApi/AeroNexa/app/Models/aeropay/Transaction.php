@@ -7,7 +7,9 @@ use Illuminate\Support\Str;
 
 class Transaction extends Model
 {
-    protected $connection = "aeropay";
+    // ✅ UNCOMMENT THIS LINE so it connects to the correct database
+    protected $connection = "aeropay"; 
+    
     protected $table = "transactions";
     protected $primaryKey = "_id";
     public $incrementing = false;
@@ -34,11 +36,10 @@ class Transaction extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (!$model->_id) {
-                $model->_id = Str::uuid();
+            if (empty($model->_id)) {
+                $model->_id = (string) Str::uuid(); 
             }
-
-            if (!$model->transaction_code) {
+            if (empty($model->transaction_code)) {
                 $model->transaction_code = 'APAY-' . strtoupper(Str::random(8));
             }
         });

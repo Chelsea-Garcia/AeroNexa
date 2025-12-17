@@ -7,11 +7,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Booking extends Model
 {
     use HasFactory;
-    // CHANGE THIS LINE:
+
     protected $connection = 'mongodb_skyroute';
     protected $collection = 'bookings';
+
     protected $fillable = [
-        'user_id', 'vehicle_id', 'origin_location_id', 'destination_location_id', 
-        'date', 'time', 'passengers', 'status'
+        'user_id', 
+        'vehicle_id', 
+        'vehicle_name',      
+        'vehicle_plate',     
+        'origin_location_id', 
+        'destination_location_id', 
+        'date', 
+        'time', 
+        'passengers', 
+        'status',
+        'total_price',       // <--- ADD THIS
+        'transaction_code'   // <--- ADD THIS
     ];
 }

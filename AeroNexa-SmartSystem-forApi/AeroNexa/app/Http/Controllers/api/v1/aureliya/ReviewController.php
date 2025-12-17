@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\aureliya;
+namespace App\Http\Controllers\api\v1\aureliya; // FIX: Lowercase namespace
 
 use App\Http\Controllers\Controller;
 use App\Models\aureliya\Review;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str; // FIX: Added Str helper
 
 class ReviewController extends Controller
 {
@@ -21,7 +22,8 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $review = Review::create([
-            '_id'        => uuid_create(UUID_TYPE_RANDOM),
+            // FIX: Use Str::uuid() instead of uuid_create()
+            '_id'        => (string) Str::uuid(),
             'property_id' => $request->property_id,
             'user_id'    => $request->user_id,
             'rating'     => $request->rating,
@@ -34,9 +36,7 @@ class ReviewController extends Controller
     public function update(Request $request, $id)
     {
         $review = Review::findOrFail($id);
-
         $review->update($request->only(['rating', 'comment']));
-
         return $review;
     }
 
