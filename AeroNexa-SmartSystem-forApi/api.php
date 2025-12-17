@@ -185,3 +185,4 @@ use App\Http\Controllers\PublicBookingController;
 
 // Ito ang tatawagin ng Frontend niyo: (POST) http://localhost:YOUR_PORT/api/hotel-booking
 Route::post('/hotel-booking', [PublicBookingController::class, 'bookHotel']);
+
